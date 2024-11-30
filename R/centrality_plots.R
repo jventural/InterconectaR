@@ -1,4 +1,4 @@
-centrality_plots <- function(g1, network, measure0 = "ExpectedInfluence", measure1 = "Bridge Expected Influence (1-step)") {
+centrality_plots <- function(qgraph_obj, network, measure0 = "ExpectedInfluence", measure1 = "Bridge Expected Influence (1-step)") {
 
   # Requerir las librerías necesarias
   if (!require("qgraph", quietly = TRUE)) install.packages("qgraph", dependencies = TRUE)
@@ -20,7 +20,7 @@ centrality_plots <- function(g1, network, measure0 = "ExpectedInfluence", measur
     filter(measure == !!measure0)
 
   # Calcular la influencia de puente
-  b <- bridge(g1, communities = groups, useCommunities = "all", normalize = FALSE)
+  b <- bridge(qgraph_obj, communities = groups, useCommunities = "all", normalize = FALSE)
 
   # Convertir el resultado en un data frame
   bridge_data <- as.data.frame(cbind(b[[measure1]])) %>%

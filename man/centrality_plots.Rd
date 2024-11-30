@@ -3,18 +3,18 @@
 \title{Calculate and Visualize Centrality Measures for Networks}
 
 \description{
-This function calculates and visualizes centrality measures for a given network. It combines measures such as \code{Expected Influence} and \code{Bridge Expected Influence} into a unified table and produces a comparative plot for visual analysis of node centrality.
+This function calculates and visualizes centrality measures for a given network. It combines measures such as \code{Expected Influence} and \code{Bridge Expected Influence (1-step)} into a unified table and produces a comparative plot for visual analysis of node centrality.
 }
 
 \usage{
-centrality_plots(g1, network, measure0 = "ExpectedInfluence", measure1 = "Bridge Expected Influence (1-step)")
+centrality_plots(qgraph_obj, network, measure0 = "ExpectedInfluence", measure1 = "Bridge Expected Influence (1-step)")
 }
 
 \arguments{
-  \item{g1}{An igraph object representing the network structure. This object is used to calculate bridge centrality measures.}
+  \item{qgraph_obj}{An igraph object representing the network structure. This object is used to calculate bridge centrality measures.}
   \item{network}{A qgraph object representing the network used to calculate standard centrality measures.}
   \item{measure0}{A character string specifying the centrality measure to calculate for \code{network}. The default is \code{"ExpectedInfluence"}.}
-  \item{measure1}{A character string specifying the bridge centrality measure to calculate for \code{g1}. The default is \code{"Bridge Expected Influence (1-step)"}.}
+  \item{measure1}{A character string specifying the bridge centrality measure to calculate for \code{qgraph_obj}. The default is \code{"Bridge Expected Influence (1-step)"}.}
 }
 
 \details{
@@ -42,12 +42,12 @@ A list with two components:
 # Example usage with a network
 
 # Define igraph and qgraph objects
-g1 <- igraph::make_ring(10) # Example igraph object
+qgraph_obj <- igraph::make_ring(10) # Example igraph object
 network <- qgraph::qgraph(matrix(rnorm(100), 10, 10)) # Example qgraph object
 
 # Calculate and visualize centrality measures
 result <- centrality_plots(
-  g1 = g1,
+  qgraph_obj = qgraph_obj,
   network = network,
   measure0 = "ExpectedInfluence",
   measure1 = "Bridge Expected Influence (1-step)"
