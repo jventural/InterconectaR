@@ -1,5 +1,4 @@
 centrality_plots <- function(qgraph_obj, network, measure0 = "ExpectedInfluence", measure1 = "Bridge Expected Influence (1-step)") {
-
   # Requerir las librerías necesarias
   if (!require("qgraph", quietly = TRUE)) install.packages("qgraph", dependencies = TRUE)
   if (!require("dplyr", quietly = TRUE)) install.packages("dplyr", dependencies = TRUE)
@@ -25,22 +24,19 @@ centrality_plots <- function(qgraph_obj, network, measure0 = "ExpectedInfluence"
   # Convertir el resultado en un data frame
   bridge_data <- as.data.frame(cbind(b[[measure1]])) %>%
     rownames_to_column(var = "Item") %>%
-    mutate(measure1 = measure1) %>%
-    mutate(V1 = scale(V1))
+    mutate(!!sym(measure1) := scale(V1)) %>%
+    select(-V1)
 
   # Unir las tablas de centralidad y seleccionar columnas clave
   cents2 <- bind_cols(bridge_data, cents_expect) %>%
-    select(node, Item, V1, value) %>%
-    rename(value_BEI = V1, value_EI = value)
+    select(node, Item, !!sym(measure1), value) %>%
+    rename(!!measure0 := value)
 
   # Preparar los datos para el gráfico combinado
   cents_long <- cents2 %>%
-    pivot_longer(cols = c("value_BEI", "value_EI"),
+    pivot_longer(cols = c(!!sym(measure1), !!sym(measure0)),
                  names_to = "Measure",
                  values_to = "Value") %>%
-    mutate(Measure = recode(Measure,
-                            "value_BEI" = "Bridge Expected Influence",
-                            "value_EI" = "Expected Influence")) %>%
     rename(Centrality = Measure)
 
   # Crear el gráfico combinado
@@ -53,10 +49,7 @@ centrality_plots <- function(qgraph_obj, network, measure0 = "ExpectedInfluence"
          x = "Value",
          y = "Item",
          color = "Centrality") +  # Etiqueta para la leyenda
-    scale_color_manual(values = c(
-      "Bridge Expected Influence" = "#FF0000",
-      "Expected Influence" = "#00A08A"
-    )) +
+    scale_color_manual(values = setNames(c("#FF0000", "#00A08A"), c(measure1, measure0))) +
     theme(axis.text.y = element_text(size = 20),
           axis.text.x = element_text(size = 20),
           legend.text = element_text(size = 15),
@@ -64,7 +57,7 @@ centrality_plots <- function(qgraph_obj, network, measure0 = "ExpectedInfluence"
 
   # Retornar los resultados
   list(
-    table = cents2 %>% arrange(desc(value_EI)),
+    table = cents2 %>% arrange(desc(!!sym(measure0))),
     plot = Figura1_Derecha
   )
 }
