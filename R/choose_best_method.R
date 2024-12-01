@@ -8,7 +8,7 @@ choose_best_method <- function(n, r_matrix) {
   r_mean <- mean(r_matrix[upper.tri(r_matrix)])
 
   # Criterios para elegir el mejor método
-  if (n < 100) {
+  if (n < 300) {
     if (r_mean > 0.10) {
       best_method <- "williams1959"  # Muestras pequeñas, correlaciones bajas
     } else {
