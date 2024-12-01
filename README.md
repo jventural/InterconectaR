@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/jventural/InterconectaR/blob/master/Logo_InterconectaR.png" alt="InterconectaR" width="200" height="200"/>
+  <img src="https://github.com/jventural/InterconectaR/blob/master/InterconectaR_Logo.jpg" alt="InterconectaR" width="200" height="200"/>
 </p>
 
 <h1 align="center">InterconectaR</h1>
