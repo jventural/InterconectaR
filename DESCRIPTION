@@ -1,11 +1,19 @@
 Package: InterconectaR
-Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Version: 1.0.0
+Date: 2024-12-05
+Title: Tools for Network Analysis and Psychometric Insights
 Encoding: UTF-8
-LazyData: true
+Author: José Ventura-León jventuraleon@gmail.com
+Maintainer: José Ventura-León jventuraleon@gmail.com
+Depends: R (>= 4.0.0)
+Imports: qgraph, networktools, dplyr, ggplot2, tidyr, reshape2, tibble, forcats, gridExtra
+Description:
+InterconectaR is a comprehensive package designed to facilitate network analysis and psychometric modeling in social sciences. It includes tools for constructing and analyzing psychological networks, calculating centrality and bridge metrics, and visualizing community structures. The package is optimized for comparing networks across groups and integrates advanced visualization techniques, making it ideal for educational, psychological, and social research.
+License: GPL (>= 3)
+URL: https://github.com/jventuraleon/InterconectaR
+Packaged: 2024-12-05 12:00:00 UTC; JoseVentura
+Suggests: testthat (>= 3.0.0)
+Config/testthat/edition: 3
+NeedsCompilation: no
+Repository: CRAN
+Date/Publication: 2024-12-05 15:00:00 UTC
