@@ -1,8 +1,7 @@
 centrality_bridge_plot <- function(
     networks_groups,
     group_names = c("Mujer", "Varón"),
-    measure0 = "ExpectedInfluence",
-    measure1 = "Bridge Expected Influence (1-step)",
+    measure = "Bridge Expected Influence (1-step)",
     color_palette = c("#FF5733", "#33FFCE"),
     labels = NULL
 ) {
@@ -28,14 +27,14 @@ centrality_bridge_plot <- function(
   }
 
   # Calcular la influencia de puente para ambas redes (sin graficar las redes)
-  qgraph_obj1 <- qgraph(network1$graph, DoNotPlot = TRUE)
-  qgraph_obj2 <- qgraph(network2$graph, DoNotPlot = TRUE)
+  qgraph_obj1 <- qgraph(network1$graph, DoNotPlot = TRUE, labels = node_labels)
+  qgraph_obj2 <- qgraph(network2$graph, DoNotPlot = TRUE, labels = node_labels)
 
   bridge1 <- bridge(qgraph_obj1, communities = groups, useCommunities = "all", normalize = FALSE)
   bridge2 <- bridge(qgraph_obj2, communities = groups, useCommunities = "all", normalize = FALSE)
 
   # Crear la tabla combinada de centralidades puente
-  centrality_data <- as.data.frame(cbind(bridge1[[measure1]], bridge2[[measure1]])) %>%
+  centrality_data <- as.data.frame(cbind(bridge1[[measure]], bridge2[[measure]])) %>%
     rownames_to_column(var = "Symptoms") %>%
     rename_at(vars(V1, V2), ~ c(group_names[1], group_names[2])) %>%
     reshape2::melt(id = "Symptoms") %>%
@@ -55,7 +54,7 @@ centrality_bridge_plot <- function(
     xlab("Nodes") + ylab("z-score") +
     theme_bw() +
     coord_flip() +
-    labs(title = paste(measure1),
+    labs(title = paste(measure),
          linetype = "Group",
          shape = "Group",
          color = "Group") +

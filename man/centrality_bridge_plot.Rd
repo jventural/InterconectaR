@@ -18,8 +18,7 @@ The \code{centrality_bridge_plot} function calculates and visualizes bridge cent
 centrality_bridge_plot(
 networks_groups,
 group_names = c("Mujer", "Varón"),
-measure0 = "ExpectedInfluence",
-measure1 = "Bridge Expected Influence (1-step)",
+measure = "Bridge Expected Influence (1-step)",
 color_palette = c("#FF5733", "#33FFCE"),
 labels = NULL
 )
@@ -28,8 +27,7 @@ labels = NULL
 \arguments{
 \item{networks_groups}{A named list containing network objects for the groups being compared. The names should correspond to the values in \code{group_names}. Each object should include a \code{graph} matrix and optional \code{labels}.}
 \item{group_names}{A character vector of length 2 specifying the names of the groups. Default is \code{c("Mujer", "Varón")}.}
-\item{measure0}{The primary centrality measure to consider for the networks (e.g., \code{"ExpectedInfluence"}). Default is \code{"ExpectedInfluence"}.}
-\item{measure1}{The bridge centrality measure to compare for the networks (e.g., \code{"Bridge Expected Influence (1-step)"}). Default is \code{"Bridge Expected Influence (1-step)"}.}
+\item{measure}{The bridge centrality measure to compare for the networks (e.g., \code{"Bridge Expected Influence (1-step)"}). Default is \code{"Bridge Expected Influence (1-step)"}.}
 \item{color_palette}{A character vector specifying colors for the groups in the plot. Default is \code{c("#FF5733", "#33FFCE")}.}
 \item{labels}{Optional. A character vector of custom labels for the nodes. If \code{NULL}, the labels from the network objects will be used.}
 }
@@ -57,23 +55,23 @@ A list with the following elements:
 \examples{
 
 Example data setup
-set.seed(123)
-network1 <- list(graph = matrix(runif(100, 0, 1), nrow = 10), labels = LETTERS[1:10])
-network2 <- list(graph = matrix(runif(100, 0, 1), nrow = 10), labels = LETTERS[1:10])
-networks_groups <- list("Mujer" = network1, "Varón" = network2)
+\code{set.seed(123)}
+\code{network1 <- list(graph = matrix(runif(100, 0, 1), nrow = 10), labels = LETTERS[1:10])}
+\code{network2 <- list(graph = matrix(runif(100, 0, 1), nrow = 10), labels = LETTERS[1:10])}
+\code{networks_groups <- list("Mujer" = network1, "Varón" = network2)}
 
 Run the function
-result <- centrality_bridge_plot(
+\code{result <- centrality_bridge_plot(
 networks_groups = networks_groups,
 group_names = c("Mujer", "Varón"),
-measure1 = "Bridge Expected Influence (1-step)",
+measure = "Bridge Expected Influence (1-step)",
 color_palette = c("#1f77b4", "#ff7f0e"),
 labels = LETTERS[1:10]
-)
+)}
 
 Access results
-result$plot # Display the comparative plot
-result$table # View the centrality data
+\code{result$plot} # Display the comparative plot
+\code{result$table} # View the centrality data
 }
 
 \author{
