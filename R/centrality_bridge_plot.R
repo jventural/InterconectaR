@@ -1,16 +1,9 @@
 centrality_bridge_plot <- function(
     networks_groups,
     group_names = c("Mujer", "Varón"),
-    groups,
     measure0 = "ExpectedInfluence",
     measure1 = "Bridge Expected Influence (1-step)",
     color_palette = c("#FF5733", "#33FFCE"),
-    layout_type = "spring", # Layout por defecto
-    layout_scale = c(0.8, 0.8),
-    vsize = 12,
-    esize = 12,
-    legend_cex = 0.5,
-    edge_labels = TRUE,
     labels = NULL
 ) {
   # Librerías necesarias
@@ -34,39 +27,17 @@ centrality_bridge_plot <- function(
     labels # Usar etiquetas proporcionadas
   }
 
-  # Construir los gráficos para ambos grupos
-  qgraph_obj1 <- qgraph(network1$graph,
-                        groups = groups,
-                        curveAll = 2,
-                        vsize = vsize,
-                        esize = esize,
-                        palette = "ggplot2",
-                        layout = layout_type,
-                        edge.labels = edge_labels,
-                        labels = node_labels, # Aplicar etiquetas
-                        layoutScale = layout_scale,
-                        legend.cex = legend_cex)
+  # Calcular la influencia de puente para ambas redes (sin graficar las redes)
+  qgraph_obj1 <- qgraph(network1$graph, DoNotPlot = TRUE)
+  qgraph_obj2 <- qgraph(network2$graph, DoNotPlot = TRUE)
 
-  qgraph_obj2 <- qgraph(network2$graph,
-                        groups = groups,
-                        curveAll = 2,
-                        vsize = vsize,
-                        esize = esize,
-                        palette = "ggplot2",
-                        layout = layout_type,
-                        edge.labels = edge_labels,
-                        labels = node_labels, # Aplicar etiquetas
-                        layoutScale = layout_scale,
-                        legend.cex = legend_cex)
-
-  # Calcular la influencia de puente para ambas redes
   bridge1 <- bridge(qgraph_obj1, communities = groups, useCommunities = "all", normalize = FALSE)
   bridge2 <- bridge(qgraph_obj2, communities = groups, useCommunities = "all", normalize = FALSE)
 
   # Crear la tabla combinada de centralidades puente
   centrality_data <- as.data.frame(cbind(bridge1[[measure1]], bridge2[[measure1]])) %>%
     rownames_to_column(var = "Symptoms") %>%
-    rename_at(vars(V1, V2), ~ c(group_names[1], group_names[2])) %>% # Nombres cortos de los grupos
+    rename_at(vars(V1, V2), ~ c(group_names[1], group_names[2])) %>%
     reshape2::melt(id = "Symptoms") %>%
     rename(Centrality = variable) %>%
     mutate(zscore = scale(value)) %>%
@@ -80,11 +51,11 @@ centrality_bridge_plot <- function(
     geom_line(aes(linetype = Centrality, color = Centrality)) +
     geom_point(aes(shape = Centrality, color = Centrality), size = 3) +
     scale_shape_manual(values = c(8, 13)) +
-    scale_color_manual(values = color_palette) + # Usar la paleta de colores proporcionada
+    scale_color_manual(values = color_palette) +
     xlab("Nodes") + ylab("z-score") +
     theme_bw() +
     coord_flip() +
-    labs(title = paste(measure1), # Título dinámico
+    labs(title = paste(measure1),
          linetype = "Group",
          shape = "Group",
          color = "Group") +
@@ -95,10 +66,8 @@ centrality_bridge_plot <- function(
       legend.title = element_text(size = 12)
     )
 
-  # Retornar los objetos de red, la tabla y el gráfico
+  # Retornar solo la tabla y el gráfico
   return(list(
-    qgraph_obj1 = qgraph_obj1,
-    qgraph_obj2 = qgraph_obj2,
     table = centrality_data,
     plot = plot
   ))
