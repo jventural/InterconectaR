@@ -1,7 +1,8 @@
 combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Model,
-                                      ncol = 2, widths = c(0.50, 0.60),
-                                      output_path = "Output/Figura_1_Final.jpg",
-                                      show_plot = FALSE) {
+                                       labels = NULL,
+                                       ncol = 2, widths = c(0.50, 0.60),
+                                       output_path = "Output/Figura_1_Final.jpg",
+                                       show_plot = FALSE) {
   # Verificar e instalar librerías necesarias
   required_packages <- c("ggplot2", "qgraph", "gridExtra", "png", "grid", "Cairo")
   for (pkg in required_packages) {
@@ -21,6 +22,7 @@ combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Mo
          palette = "pastel", # Opciones: colorblind, ggplot2, pastel, rainbow
          layout = "spring",
          edge.labels = TRUE,
+         labels = if (is.null(labels)) network$labels else labels, # Uso del nuevo argumento
          legend.cex = 0.6,
          legend = TRUE,
          details = FALSE,
