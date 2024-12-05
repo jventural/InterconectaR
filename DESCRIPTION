@@ -10,7 +10,7 @@ Imports: qgraph, networktools, dplyr, ggplot2, tidyr, reshape2, tibble, forcats,
 Description:
 InterconectaR is a comprehensive package designed to facilitate network analysis and psychometric modeling in social sciences. It includes tools for constructing and analyzing psychological networks, calculating centrality and bridge metrics, and visualizing community structures. The package is optimized for comparing networks across groups and integrates advanced visualization techniques, making it ideal for educational, psychological, and social research.
 License: GPL (>= 3)
-URL: https://github.com/jventuraleon/InterconectaR
+URL: https://github.com/jventural/InterconectaR
 Packaged: 2024-12-05 12:00:00 UTC; JoseVentura
 Suggests: testthat (>= 3.0.0)
 Config/testthat/edition: 3
