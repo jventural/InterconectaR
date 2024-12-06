@@ -6,7 +6,6 @@ Encoding: UTF-8
 Author: José Ventura-León
 Maintainer: José Ventura-León <jventuraleon@gmail.com>
 Depends: R (>= 4.0.0)
-Imports: qgraph, networktools, dplyr, ggplot2, tidyr, reshape2, tibble, forcats, gridExtra
 Description: InterconectaR is a comprehensive package designed to facilitate network analysis and psychometric modeling in social sciences. It includes tools for constructing and analyzing psychological networks, calculating centrality and bridge metrics, and visualizing community structures. The package is optimized for comparing networks across groups and integrates advanced visualization techniques, making it ideal for educational, psychological, and social research.
 License: GPL (>= 3)
 URL: https://github.com/jventural/InterconectaR

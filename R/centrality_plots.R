@@ -62,8 +62,10 @@ centrality_plots <- function(qgraph_obj, network,
     scale_color_manual(values = setNames(color_palette, c(measure1, measure0))) +
     theme(axis.text.y = element_text(size = 20),
           axis.text.x = element_text(size = 20),
-          legend.text = element_text(size = 15),
-          legend.title = element_text(size = 15))
+          legend.text = element_text(size = 12),
+          legend.title = element_text(size = 12),
+          axis.title.y = element_text(size = 20),
+          legend.position = "bottom")
 
   # Retornar los resultados
   list(

@@ -3,14 +3,15 @@
 \title{Combine Centrality and Comparative Plots into a Unified Visualization}
 
 \description{
-The \code{combine_graphs_centrality} function creates a composite visualization by combining a network centrality graph generated with the \code{qgraph} package and a comparative plot (e.g., a \code{ggplot2} object). The combined visualization can be displayed directly in RStudio or saved as a high-resolution image file.
+The \code{combine_graphs_centrality} function creates a composite visualization by combining a centrality network graph (generated using the \code{qgraph} package) with a comparative \code{ggplot2} visualization. It is designed for flexibility and supports publication-quality output with customizable layouts and high-resolution saving options.
 
 \strong{Key Features}:
 \itemize{
-  \item Automatically installs and loads required packages (\code{ggplot2}, \code{qgraph}, \code{gridExtra}, \code{png}, \code{grid}, \code{Cairo}) if they are not already available.
-  \item Allows customization of the centrality graph with options for node grouping, layout, edge labels, and more.
-  \item Produces flexible layouts for combined visualizations with adjustable column counts and plot widths.
-  \item Supports high-resolution output for publications or presentations.
+  \item Integrates centrality analysis with comparative visualizations for a holistic view of network data.
+  \item Automatically handles the installation and loading of required packages.
+  \item Supports customization of \code{qgraph} properties, including node grouping, labels, edge visualization, and layout options.
+  \item Provides flexible layout adjustments for the combined visualization (e.g., column count and plot widths).
+  \item Saves high-resolution outputs suitable for publications or presentations.
 }
 }
 
@@ -18,49 +19,51 @@ The \code{combine_graphs_centrality} function creates a composite visualization 
 combine_graphs_centrality(Figura1_Derecha, network, groups, error_Model,
                           labels = NULL, ncol = 2, widths = c(0.50, 0.60),
                           output_path = "Output/Figura_1_Final.jpg",
-                          show_plot = FALSE)
+                          show_plot = FALSE, dpi = 600, legend.cex = 0.1)
 }
 
 \arguments{
-\item{Figura1_Derecha}{A \code{ggplot2} object representing a comparative plot to be included in the final visualization.}
-\item{network}{A list containing the network structure for the centrality graph. The list must include a \code{graph} matrix suitable for \code{qgraph}.}
+\item{Figura1_Derecha}{A \code{ggplot2} object representing the comparative plot to be integrated into the final visualization.}
+\item{network}{A list containing the network structure for the centrality graph. The \code{graph} component must be a matrix suitable for \code{qgraph}.}
 \item{groups}{A vector or list specifying the grouping of nodes for coloring in the centrality graph.}
-\item{error_Model}{A vector containing proportions or other data for pie chart visualizations on the nodes in the \code{qgraph} graph.}
-\item{labels}{Optional. A vector of custom labels for the nodes in the centrality graph. If \code{NULL}, the default labels in \code{network$labels} are used.}
-\item{ncol}{An integer specifying the number of columns in the layout of the combined visualization. Default is \code{2}.}
+\item{error_Model}{A vector of numerical values (e.g., proportions or scores) for pie chart visualizations on the nodes in the \code{qgraph} graph.}
+\item{labels}{Optional. A vector of custom labels for the nodes in the centrality graph. Defaults to \code{network$labels} if not specified.}
+\item{ncol}{An integer indicating the number of columns in the combined visualization layout. Default is \code{2}.}
 \item{widths}{A numeric vector specifying the relative widths of the two plots in the layout. Default is \code{c(0.50, 0.60)}.}
-\item{output_path}{A string specifying the file path to save the final visualization as a high-resolution JPEG file. Default is \code{"Output/Figura_1_Final.jpg"}.}
-\item{show_plot}{Logical. If \code{TRUE}, the visualization is displayed in the RStudio plot window. If \code{FALSE}, it is saved to the file specified in \code{output_path}. Default is \code{FALSE}.}
+\item{output_path}{A string specifying the file path where the final visualization will be saved as a high-resolution JPEG image. Default is \code{"Output/Figura_1_Final.jpg"}.}
+\item{show_plot}{Logical. If \code{TRUE}, the combined visualization is displayed in the RStudio plot viewer. If \code{FALSE}, it is saved to the file specified in \code{output_path}. Default is \code{FALSE}.}
+\item{dpi}{An integer specifying the resolution (dots per inch) for the saved visualization. Default is \code{600}.}
+\item{legend.cex}{A numeric value controlling the size of the legend in the centrality graph. Default is \code{0.1}.}
 }
 
 \details{
-The function generates the centrality graph using \code{qgraph} and saves it temporarily as a PNG file. This file is then imported into R as a raster image using the \code{png} package. The rasterized graph is combined with the provided \code{Figura1_Derecha} plot using the \code{gridExtra} package.
+The function generates the centrality graph using \code{qgraph} and saves it as a temporary PNG file with the specified resolution. The saved image is then imported into R as a raster object using the \code{png} package. This rasterized graph is combined with the \code{ggplot2} visualization (\code{Figura1_Derecha}) using \code{gridExtra} for layout management.
 
-The combined output can be displayed in the RStudio plot window (\code{show_plot = TRUE}) or saved as a high-resolution JPEG file (\code{show_plot = FALSE}). The function automatically deletes temporary files after use.
+The output can be displayed interactively (\code{show_plot = TRUE}) or saved to a file for further use (\code{show_plot = FALSE}). Temporary files created during the process are automatically deleted after execution.
 
-The centrality graph includes a variety of customizable options such as node sizes, edge sizes, color palettes, layout, and the inclusion of pie charts based on \code{error_Model}.
+The centrality graph is highly customizable, with options for node sizes, edge visualization, pie charts based on \code{error_Model}, and layout adjustments.
 }
 
 \value{
-The function does not return a value. Instead, it produces:
+The function does not return an object. Instead, it produces:
 \itemize{
-  \item A plot displayed in the RStudio plot viewer (\code{show_plot = TRUE}).
-  \item A saved high-resolution JPEG file at the location specified in \code{output_path} (\code{show_plot = FALSE}).
+  \item A displayed plot in the RStudio plot viewer (\code{show_plot = TRUE}).
+  \item A high-resolution JPEG file saved at the location specified by \code{output_path} (\code{show_plot = FALSE}).
 }
 }
 
 \examples{
-# Example: Simulating a network for testing
+# Example: Simulated network and comparative plot
 network <- list(graph = matrix(sample(0:1, 100, replace = TRUE), 10, 10), labels = LETTERS[1:10])
 groups <- rep(1:2, each = 5)
 error_Model <- runif(10, 0, 1)
 
-# Creating a ggplot object for Figura1_Derecha
+# Creating a ggplot2 object
 library(ggplot2)
 Figura1_Derecha <- ggplot(data.frame(x = 1:10, y = rnorm(10)), aes(x, y)) +
   geom_point() + theme_minimal()
 
-# Saving the combined visualization
+# Save visualization
 combine_graphs_centrality(Figura1_Derecha = Figura1_Derecha,
                           network = network,
                           groups = groups,
@@ -70,13 +73,11 @@ combine_graphs_centrality(Figura1_Derecha = Figura1_Derecha,
                           output_path = "Output/Figura_1_Final.jpg",
                           show_plot = FALSE)
 
-# Displaying the combined visualization in RStudio
+# Show visualization
 combine_graphs_centrality(Figura1_Derecha = Figura1_Derecha,
                           network = network,
                           groups = groups,
                           error_Model = error_Model,
-                          ncol = 2,
-                          widths = c(0.50, 0.60),
                           show_plot = TRUE)
 }
 

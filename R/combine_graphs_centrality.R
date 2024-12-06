@@ -2,7 +2,9 @@ combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Mo
                                        labels = NULL,
                                        ncol = 2, widths = c(0.50, 0.60),
                                        output_path = "Output/Figura_1_Final.jpg",
-                                       show_plot = FALSE) {
+                                       show_plot = FALSE,
+                                       dpi = 600,
+                                       legend.cex = 0.1) { # Nuevo argumento legend.cex con valor predeterminado
   # Verificar e instalar librerías necesarias
   required_packages <- c("ggplot2", "qgraph", "gridExtra", "png", "grid", "Cairo")
   for (pkg in required_packages) {
@@ -12,8 +14,8 @@ combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Mo
     }
   }
 
-  # Guardar el primer gráfico (g1) como archivo PNG
-  Cairo::CairoPNG("g1_temp.png", width = 1000, height = 1000, res = 120)
+  # Guardar el primer gráfico (g1) como archivo PNG con la resolución especificada
+  Cairo::CairoPNG("g1_temp.png", width = 1000, height = 1000, res = dpi)
   qgraph(network$graph,
          groups = groups,
          curveAll = 2,
@@ -22,8 +24,8 @@ combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Mo
          palette = "pastel", # Opciones: colorblind, ggplot2, pastel, rainbow
          layout = "spring",
          edge.labels = TRUE,
-         labels = if (is.null(labels)) network$labels else labels, # Uso del nuevo argumento
-         legend.cex = 0.6,
+         labels = if (is.null(labels)) network$labels else labels, # Uso del argumento labels
+         legend.cex = legend.cex, # Uso del nuevo argumento legend.cex
          legend = TRUE,
          details = FALSE,
          node.width = 0.8,
@@ -41,8 +43,8 @@ combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Mo
     # Mostrar el gráfico en la ventana de RStudio
     gridExtra::grid.arrange(g1_raster, Figura1_Derecha, ncol = ncol, widths = widths)
   } else {
-    # Guardar el gráfico como un archivo JPEG
-    jpeg(output_path, width = 13, height = 6.5, units = "in", res = 2000)
+    # Guardar el gráfico como un archivo JPEG con la resolución especificada
+    jpeg(output_path, width = 13, height = 6.5, units = "in", res = dpi)
     gridExtra::grid.arrange(g1_raster, Figura1_Derecha, ncol = ncol, widths = widths)
     dev.off()
     message("Figure saved at: ", output_path)

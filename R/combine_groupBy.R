@@ -1,7 +1,8 @@
 combine_groupBy <- function(red_group, plot_centralidad_group, bridge_plot_group = NULL,
-                                 output_path = "combine_three_graphs.jpg",
-                                 height = 10, width_a = 8, width_bc = 4.5,
-                                 show_plot = TRUE) {
+                             output_path = "combine_three_graphs.jpg",
+                             height = 10, width_a = 8, width_bc = 4.5,
+                             dpi = 300,
+                             show_plot = TRUE) {
   # Verificar e instalar librerías necesarias
   required_packages <- c("ggplot2", "gridExtra", "grid", "Cairo", "magick", "cowplot")
   for (pkg in required_packages) {
@@ -74,7 +75,7 @@ combine_groupBy <- function(red_group, plot_centralidad_group, bridge_plot_group
     grid::grid.newpage()
     grid::grid.draw(combined_plot)
   } else {
-    jpeg(output_path, width = (width_a + width_bc), height = height, units = "in", res = 300)
+    jpeg(output_path, width = (width_a + width_bc), height = height, units = "in", res = dpi)
     grid::grid.draw(combined_plot)
     dev.off()
     message("Figure saved at: ", output_path)
