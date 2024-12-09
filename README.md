@@ -69,3 +69,9 @@ result <- centrality_plots(qgraph_obj = qgraph_obj,
                            measure1 = "Bridge Expected Influence (1-step)")
 print(result$plot)
 ```
+
+## Citation
+Ventura-León, J. (2024). _InterconectaR_ [Software]. GitHub. https://github.com/jventural/InterconectaR
+
+## Author
+Jose Ventura jventuraleon@gmail.com
