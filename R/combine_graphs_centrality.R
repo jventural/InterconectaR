@@ -15,7 +15,7 @@ combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Mo
   }
 
   # Guardar el primer gráfico (g1) como archivo PNG con la resolución especificada
-  Cairo::CairoPNG("g1_temp.png", width = 1000, height = 1000, res = dpi)
+  Cairo::CairoPNG("g1_temp.png", width = 1600, height = 1000, res = dpi)
   qgraph(network$graph,
          groups = groups,
          curveAll = 2,
@@ -30,7 +30,8 @@ combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Mo
          details = FALSE,
          node.width = 0.8,
          pie = error_Model,
-         layoutScale = c(1, 1),
+         layoutScale = c(0.9, 0.9),
+         GLratio = 2,
          edge.label.cex = 1)
   dev.off() # Cierra el dispositivo gráfico
 
@@ -44,7 +45,7 @@ combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Mo
     gridExtra::grid.arrange(g1_raster, Figura1_Derecha, ncol = ncol, widths = widths)
   } else {
     # Guardar el gráfico como un archivo JPEG con la resolución especificada
-    jpeg(output_path, width = 13, height = 6.5, units = "in", res = dpi)
+    jpeg(output_path, width = 15, height = 6.5, units = "in", res = dpi)
     gridExtra::grid.arrange(g1_raster, Figura1_Derecha, ncol = ncol, widths = widths)
     dev.off()
     message("Figure saved at: ", output_path)

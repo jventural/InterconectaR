@@ -1,8 +1,8 @@
 centrality_plots <- function(qgraph_obj, network,
-                             measure0 = "ExpectedInfluence",
-                             measure1 = "Bridge Expected Influence (1-step)",
-                             color_palette = c("#FF0000", "#00A08A"),
-                             labels = NULL) {
+                              measure0 = "ExpectedInfluence",
+                              measure1 = "Bridge Expected Influence (1-step)",
+                              color_palette = c("#FF0000", "#00A08A"),
+                              labels = NULL) {
   # Requerir las librerías necesarias
   if (!require("qgraph", quietly = TRUE)) install.packages("qgraph", dependencies = TRUE)
   if (!require("dplyr", quietly = TRUE)) install.packages("dplyr", dependencies = TRUE)
@@ -61,10 +61,11 @@ centrality_plots <- function(qgraph_obj, network,
          color = "Centrality") +  # Etiqueta para la leyenda
     scale_color_manual(values = setNames(color_palette, c(measure1, measure0))) +
     theme(axis.text.y = element_text(size = 20),
-          axis.text.x = element_text(size = 20),
-          legend.text = element_text(size = 12),
-          legend.title = element_text(size = 12),
+          axis.text.x = element_text(size = 25),
+          legend.text = element_text(size = 20),
+          legend.title = element_text(size = 20),
           axis.title.y = element_text(size = 20),
+          axis.title.x = element_text(size = 25),
           legend.position = "bottom")
 
   # Retornar los resultados
