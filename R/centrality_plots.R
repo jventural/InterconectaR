@@ -2,7 +2,8 @@ centrality_plots <- function(qgraph_obj, network,
                               measure0 = "ExpectedInfluence",
                               measure1 = "Bridge Expected Influence (1-step)",
                               color_palette = c("#FF0000", "#00A08A"),
-                              labels = NULL) {
+                              labels = NULL,
+                              legend_labels = NULL) {
   # Requerir las librerías necesarias
   if (!require("qgraph", quietly = TRUE)) install.packages("qgraph", dependencies = TRUE)
   if (!require("dplyr", quietly = TRUE)) install.packages("dplyr", dependencies = TRUE)
@@ -49,6 +50,13 @@ centrality_plots <- function(qgraph_obj, network,
                  values_to = "Value") %>%
     rename(Centrality = Measure)
 
+  # Ajustar las etiquetas de la leyenda
+  if (is.null(legend_labels)) {
+    legend_labels <- setNames(c(measure0, measure1), c(measure1, measure0))
+  } else {
+    legend_labels <- setNames(legend_labels, c(measure1, measure0))
+  }
+
   # Crear el gráfico combinado
   Figura1_Derecha <- ggplot(cents_long, aes(x = Value, y = reorder(Item, Value),
                                             color = Centrality, group = Centrality)) +
@@ -59,7 +67,8 @@ centrality_plots <- function(qgraph_obj, network,
          x = "z-score",
          y = "Nodes",
          color = "Centrality") +  # Etiqueta para la leyenda
-    scale_color_manual(values = setNames(color_palette, c(measure1, measure0))) +
+    scale_color_manual(values = setNames(color_palette, names(legend_labels)),
+                       labels = legend_labels) +
     theme(axis.text.y = element_text(size = 20),
           axis.text.x = element_text(size = 25),
           legend.text = element_text(size = 20),
