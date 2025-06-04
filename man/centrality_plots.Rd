@@ -40,49 +40,70 @@ This function performs the following steps:
 \enumerate{
 \item Extracts standard centrality metrics (e.g., \code{Expected Influence}) from the \code{network} using \code{qgraph::centralityTable()} and filters for \code{measure0}.
 \item Calculates bridge centrality metrics (e.g., \code{Bridge Expected Influence (1-step)}) for \code{qgraph_obj} using the \code{networktools::bridge()} function.
-\item Combines the results into a single table with standardized z-scores for both centrality types.
-\item Generates a comparative plot using \code{ggplot2}, with nodes ordered by centrality and connected by lines across the measures.
-\item Supports customization of node labels and plot colors for enhanced interpretability.
+\description{
+\item Combines the results into a single table with standardized z-scores for both centrality types, including an “Abrev” column for three-character node abbreviations.
+\item Generates a comparative plot using \code{ggplot2}, with the y-axis labeled “Nodos” and nodes ordered by centrality. Lines connect corresponding nodes across the selected measures.
+\item Supports toggling between full node labels or three-character abbreviations via the \code{use_abbrev} argument, as well as customization of node labels, plot colors, and legend labels for enhanced interpretability.
 }
 
-The function automatically installs and loads the following required libraries if they are not already available: \code{qgraph}, \code{dplyr}, \code{networktools}, \code{tibble}, \code{ggplot2}, and \code{tidyr}.
+The function automatically installs and loads the following required libraries if they are not already available: \code{qgraph}, \code{dplyr}, \code{networktools}, \code{tibble}, \code{ggplot2}, \code{tidyr}, and \code{stringr}.
 
 \value{
 A list with the following components:
 \itemize{
-\item \code{table}: A dataframe with combined centrality measures, including:
+\item \code{table}: A dataframe containing:
 \itemize{
-\item \code{node}: Node identifiers.
-\item \code{Item}: Node labels for visualization.
-\item \code{measure1}: Scaled bridge centrality values (z-scores).
+\item \code{full_name}: Original node identifiers (character).
+\item \code{Abrev}: Three-character abbreviations of \code{full_name} (character).
+\item \code{measure1}: Scaled bridge centrality values (z-scores), present only if \code{measure1} is not \code{NULL}.
 \item \code{measure0}: Standard centrality values (z-scores).
 }
-\item \code{plot}: A \code{ggplot2} object visualizing the comparative centrality measures for all nodes, with lines connecting corresponding nodes across the measures.
+\item \code{plot}: A \code{ggplot2} object visualizing the comparative centrality measures for all nodes. The y-axis is titled “Nodos,” and either full names or abbreviations are shown depending on \code{use_abbrev}. Lines and points connect each node’s values across \code{measure0} and (if provided) \code{measure1}.
 }
 }
 
 \examples{
+\dontrun{
 
-Example network setup
+Example network setup (requires qgraph and igraph)
 library(qgraph)
 library(igraph)
 
-Create example network objects
+Create an example igraph ring and convert to qgraph format
 set.seed(123)
-qgraph_obj <- igraph::make_ring(10) # Example igraph object
-network <- qgraph::qgraph(matrix(rnorm(100), 10, 10)) # Example qgraph object
+ig_obj <- igraph::make_ring(10)
+adj_mat <- igraph::as_adjacency_matrix(ig_obj, sparse = FALSE)
+network <- qgraph::qgraph(adj_mat)
 
-Calculate and visualize centrality measures
-result <- centrality_plots(
-qgraph_obj = qgraph_obj,
+Calculate and visualize centrality measures using full names
+result_full <- centrality_plots(
+qgraph_obj = ig_obj,
 network = network,
+groups = rep(1:2, each = 5), # example community vector
 measure0 = "ExpectedInfluence",
-measure1 = "Bridge Expected Influence (1-step)"
+measure1 = "Bridge Expected Influence (1-step)",
+color_palette = c("#FF0000", "#00A08A"),
+use_abbrev = FALSE
+)
+
+Calculate and visualize centrality measures using abbreviations
+result_abbrev <- centrality_plots(
+qgraph_obj = ig_obj,
+network = network,
+groups = rep(1:2, each = 5),
+measure0 = "ExpectedInfluence",
+measure1 = NULL,
+color_palette = c("#1B9E77"),
+use_abbrev = TRUE
 )
 
 View the results
-print(result$table) # Centrality table
-print(result$plot) # Comparative plot
+print(result_full$table) # Centrality table with both measures, full names
+print(result_full$plot) # Comparative plot showing full names
+
+print(result_abbrev$table) # Centrality table with abbreviations only
+print(result_abbrev$plot) # Plot showing three-character abbreviations
+}
 }
 
 \author{
