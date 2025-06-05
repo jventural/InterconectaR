@@ -1,84 +1,97 @@
 \name{combine_graphs_centrality}
 \alias{combine_graphs_centrality}
-\title{Combine Centrality and Comparative Plots into a Unified Visualization}
+\title{Combine Centrality and Comparative Plots into a Unified ggplot Object}
 
 \description{
-The \code{combine_graphs_centrality} function creates a composite visualization by combining a centrality network graph (generated using the \code{qgraph} package) with a comparative \code{ggplot2} visualization. It is designed for flexibility and supports publication-quality output with customizable layouts and high-resolution saving options.
+The \code{combine_graphs_centrality} function creates a composite \code{ggplot2} object by combining a centrality network graph (rendered via \code{qgraph}) with a comparative \code{ggplot2} plot. Instead of writing directly to disk, it returns a \code{ggplot} object (of a custom class that suppresses the common “No shared levels found…” warning) so that you can further annotate it or save it using \code{ggsave()}.
 
 \strong{Key Features}:
 \itemize{
-  \item Integrates centrality analysis with comparative visualizations for a holistic view of network data.
-  \item Automatically handles the installation and loading of required packages.
-  \item Supports customization of \code{qgraph} properties, including node grouping, labels, edge visualization, and layout options.
-  \item Provides flexible layout adjustments for the combined visualization (e.g., column count and plot widths).
-  \item Saves high-resolution outputs suitable for publications or presentations.
+\item Integrates a centrality network (produced by \code{qgraph})—embedded as a raster,—with a separate \code{ggplot2} visualization into one layout via \code{patchwork}.
+\item Automatically checks for and installs required packages (\code{ggplot2}, \code{qgraph}, \code{png}, \code{grid}, \code{patchwork}, \code{Cairo}).
+\item Suppresses the “No shared levels found between \code{names(values)} of the manual scale and the data’s colour values” warning by assigning a custom \code{"silent_gg"} class and print method.
+\item Allows fine control over \code{qgraph} aesthetics (node grouping, labels, edge‐label settings, pie slices from \code{error_Model}, layout parameters, etc.).
+\item Returns a single \code{ggplot} object that can be modified or saved externally (e.g., with \code{ggsave()}).
 }
 }
 
 \usage{
 combine_graphs_centrality(Figura1_Derecha, network, groups, error_Model,
-                          labels = NULL, ncol = 2, widths = c(0.50, 0.60),
-                          output_path = "Output/Figura_1_Final.jpg",
-                          show_plot = FALSE, dpi = 600, legend.cex = 0.1)
+labels = NULL,
+ncol = 2, widths = c(0.50, 0.60),
+dpi = 600, legend.cex = 0.1)
 }
 
 \arguments{
-\item{Figura1_Derecha}{A \code{ggplot2} object representing the comparative plot to be integrated into the final visualization.}
-\item{network}{A list containing the network structure for the centrality graph. The \code{graph} component must be a matrix suitable for \code{qgraph}.}
-\item{groups}{A vector or list specifying the grouping of nodes for coloring in the centrality graph.}
-\item{error_Model}{A vector of numerical values (e.g., proportions or scores) for pie chart visualizations on the nodes in the \code{qgraph} graph.}
-\item{labels}{Optional. A vector of custom labels for the nodes in the centrality graph. Defaults to \code{network$labels} if not specified.}
-\item{ncol}{An integer indicating the number of columns in the combined visualization layout. Default is \code{2}.}
-\item{widths}{A numeric vector specifying the relative widths of the two plots in the layout. Default is \code{c(0.50, 0.60)}.}
-\item{output_path}{A string specifying the file path where the final visualization will be saved as a high-resolution JPEG image. Default is \code{"Output/Figura_1_Final.jpg"}.}
-\item{show_plot}{Logical. If \code{TRUE}, the combined visualization is displayed in the RStudio plot viewer. If \code{FALSE}, it is saved to the file specified in \code{output_path}. Default is \code{FALSE}.}
-\item{dpi}{An integer specifying the resolution (dots per inch) for the saved visualization. Default is \code{600}.}
-\item{legend.cex}{A numeric value controlling the size of the legend in the centrality graph. Default is \code{0.1}.}
+\item{\code{Figura1_Derecha}}{A \code{ggplot2} object representing the comparative plot to be integrated into the final visualization.}
+\item{\code{network}}{A list containing the network structure for the centrality graph. Must include:
+\itemize{
+\item \code{graph}: a square adjacency matrix (numeric) suitable for \code{qgraph}.
+\item \code{labels}: a character vector of node labels (one per row/column of \code{graph}).
+}}
+\item{\code{groups}}{A vector (or list) of the same length as the number of nodes, specifying membership for coloring nodes in the \code{qgraph} visualization.}
+\item{\code{error_Model}}{A numeric vector of length equal to the number of nodes; values are used for pie‐chart slices on each node in the network graph.}
+\item{\code{labels}}{Optional. A character vector of custom node labels. Defaults to \code{network$labels} if \code{NULL}.}
+\item{\code{ncol}}{An integer indicating the number of columns in the combined layout. Default: \code{2}.}
+\item{\code{widths}}{A numeric vector of length 2 specifying the relative widths of the centrality panel and the comparative panel. Default: \code{c(0.50, 0.60)}.}
+\item{\code{dpi}}{An integer specifying the resolution (dots per inch) for the temporary PNG output of the \code{qgraph} graph. Default: \code{600}.}
+\item{\code{legend.cex}}{A numeric value controlling the size of the legend text in the centrality graph. Default: \code{0.1}.}
 }
 
 \details{
-The function generates the centrality graph using \code{qgraph} and saves it as a temporary PNG file with the specified resolution. The saved image is then imported into R as a raster object using the \code{png} package. This rasterized graph is combined with the \code{ggplot2} visualization (\code{Figura1_Derecha}) using \code{gridExtra} for layout management.
-
-The output can be displayed interactively (\code{show_plot = TRUE}) or saved to a file for further use (\code{show_plot = FALSE}). Temporary files created during the process are automatically deleted after execution.
-
-The centrality graph is highly customizable, with options for node sizes, edge visualization, pie charts based on \code{error_Model}, and layout adjustments.
+When you call \code{combine_graphs_centrality}, the function will:
+\enumerate{
+\item Check for (and install, if missing) the packages: \code{ggplot2}, \code{qgraph}, \code{png}, \code{grid}, \code{patchwork}, and \code{Cairo}.
+\item Render the centrality network via \code{qgraph} into a temporary PNG at the specified \code{dpi}.
+\item Read that PNG back into R as a \code{rasterGrob} (using \code{png::readPNG()} and \code{grid::rasterGrob()}) and place it into a blank \code{ggplot} canvas via \code{annotation_custom()}.
+\item Combine this rasterized network plot (\code{p1}) with the provided \code{Figura1_Derecha} using \code{patchwork::plot_layout()}, respecting \code{ncol} and \code{widths}.
+\item Assign a custom class \code{"silent_gg"} and install a \code{print.silent_gg} method that wraps \code{suppressWarnings()}, thereby hiding any “No shared levels found…” messages when printing or saving.
+\item Automatically delete the temporary PNG file.
 }
+Since the function returns a composed \code{ggplot} object, you can then save it (for example, with \code{ggsave()}) or add further layers, titles, or annotations as needed.}
 
 \value{
-The function does not return an object. Instead, it produces:
-\itemize{
-  \item A displayed plot in the RStudio plot viewer (\code{show_plot = TRUE}).
-  \item A high-resolution JPEG file saved at the location specified by \code{output_path} (\code{show_plot = FALSE}).
-}
-}
+A \code{ggplot} object of class \code{"silent_gg"}.
+When printed or saved, warnings about “No shared levels found…” will be suppressed. You can pass this object directly to \code{ggsave()} or continue modifying it with additional \code{ggplot2} code.}
 
 \examples{
-# Example: Simulated network and comparative plot
-network <- list(graph = matrix(sample(0:1, 100, replace = TRUE), 10, 10), labels = LETTERS[1:10])
+
+# Simulated adjacency matrix and labels
+adj_mat <- matrix(sample(0:1, 100, replace = TRUE), 10, 10)
+diag(adj_mat) <- 0
+network <- list(graph = adj_mat, labels = LETTERS[1:10])
 groups <- rep(1:2, each = 5)
 error_Model <- runif(10, 0, 1)
 
-# Creating a ggplot2 object
+# Create a comparative ggplot2 object
 library(ggplot2)
 Figura1_Derecha <- ggplot(data.frame(x = 1:10, y = rnorm(10)), aes(x, y)) +
-  geom_point() + theme_minimal()
+geom_point(size = 3) +
+theme_minimal() +
+labs(title = "Comparative Plot")
 
-# Save visualization
-combine_graphs_centrality(Figura1_Derecha = Figura1_Derecha,
-                          network = network,
-                          groups = groups,
-                          error_Model = error_Model,
-                          ncol = 2,
-                          widths = c(0.50, 0.60),
-                          output_path = "Output/Figura_1_Final.jpg",
-                          show_plot = FALSE)
+# Combine into a single ggplot object
+combined_plot <- combine_graphs_centrality(
+Figura1_Derecha = Figura1_Derecha,
+network = network,
+groups = groups,
+error_Model = error_Model,
+labels = NULL,
+ncol = 2,
+widths = c(0.5, 0.5),
+dpi = 300,
+legend.cex = 0.2
+)
 
-# Show visualization
-combine_graphs_centrality(Figura1_Derecha = Figura1_Derecha,
-                          network = network,
-                          groups = groups,
-                          error_Model = error_Model,
-                          show_plot = TRUE)
+# Save using ggsave (15" × 6.5" at 300 dpi)
+ggsave(
+filename = "combined_centrality_plot.png",
+plot = combined_plot,
+width = 15,
+height = 6.5,
+units = "in",
+dpi = 300
+)
 }
 
 \author{
