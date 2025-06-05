@@ -14,9 +14,9 @@ The \code{plot_centrality_by_group} function visualizes centrality measures from
 }
 
 \usage{
-plot_centrality_by_group(networks_groups, replacements, measure_spec,
-                         color_palette = c("#FF5733", "#33FFCE"),
-                         labels = NULL)
+plot_centrality_by_group(networks_groups,
+                         replacements, measure_spec,
+                         color_palette = c("#FF5733", "#33FFCE"))
 }
 
 \arguments{
@@ -57,16 +57,12 @@ networks_groups <- list(network1, network2)
 replacements <- c("Group A", "Group B")
 measure_spec <- "Strength"
 
-# Custom labels for nodes
-custom_labels <- c("Var1" = "Node 1", "Var2" = "Node 2", "Var3" = "Node 3")
-
 # Create the plot
 plot <- plot_centrality_by_group(
   networks_groups = networks_groups,
   replacements = replacements,
   measure_spec = measure_spec,
-  color_palette = c("#1f77b4", "#ff7f0e"),
-  labels = custom_labels
+  color_palette = c("#1f77b4", "#ff7f0e")
 )
 
 # Display the plot

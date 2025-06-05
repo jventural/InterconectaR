@@ -1,6 +1,5 @@
 plot_centrality_by_group <- function(networks_groups, replacements, measure_spec,
-                                     color_palette = c("#FF5733", "#33FFCE"),
-                                     labels = NULL) {
+                                     color_palette = c("#FF5733", "#33FFCE")) {
   library(dplyr)
   library(ggplot2)
   library(forcats)
@@ -16,18 +15,16 @@ plot_centrality_by_group <- function(networks_groups, replacements, measure_spec
     select(-type) %>%
     filter(measure == measure_spec)
 
-  # Modificar los valores de 'node' si se proporcionan etiquetas personalizadas
-  if (!is.null(labels)) {
-    cents <- cents %>%
-      mutate(node = ifelse(node %in% names(labels), labels[node], as.character(node)))
-  }
-
   # Crear el gráfico utilizando ggplot
-  Figure2 <- ggplot(data = cents,
-                    aes(x = forcats::fct_reorder(factor(node), value, mean),
-                        y = value,
-                        group = group,
-                        color = group)) +
+  Figure2 <- ggplot(
+    data = cents,
+    aes(
+      x = forcats::fct_reorder(factor(node), value, mean),
+      y = value,
+      group = group,
+      color = group
+    )
+  ) +
     geom_line(aes(linetype = group, color = group)) +
     geom_point(aes(shape = group, color = group), size = 3) +
     scale_shape_manual(values = c(8, 13)) +  # Personaliza las formas de los puntos
@@ -37,10 +34,12 @@ plot_centrality_by_group <- function(networks_groups, replacements, measure_spec
     ylab("z-score") +
     theme_bw() +
     coord_flip() +
-    labs(title = paste(unique(cents$measure)),
-         linetype = "Group",
-         shape = "Group",
-         color = "Group") +
+    labs(
+      title = paste(unique(cents$measure)),
+      linetype = "Group",
+      shape = "Group",
+      color = "Group"
+    ) +
     theme(
       axis.text.y = element_text(size = 12),
       axis.text.x = element_text(size = 12),
