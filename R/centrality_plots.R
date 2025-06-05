@@ -107,18 +107,17 @@ centrality_plots <- function(qgraph_obj,
     # 5A) Definir paleta y etiquetas de leyenda
     ################################################################################
     if (is.null(legend_labels)) {
-      pal        <- setNames(color_palette, c(measure1, measure0))
-      legend_lbls <- setNames(c(measure1, measure0),
-                              c(measure1, measure0))
+      pal         <- setNames(color_palette, c(measure1, measure0))
+      legend_lbls <- setNames(c(measure1, measure0), c(measure1, measure0))
     } else {
-      pal        <- setNames(color_palette, c(measure1, measure0))
+      pal         <- setNames(color_palette, c(measure1, measure0))
       legend_lbls <- legend_labels
     }
 
     ################################################################################
-    # 6A) ggplot con dos líneas (measure1 + measure0)
+    # 6A) Construir ggplot con dos líneas y suprimir warnings en PRINT
     ################################################################################
-    Figura <- ggplot(
+    Figura <-  ggplot(
       cents_long,
       aes(
         x     = Value,
@@ -149,6 +148,12 @@ centrality_plots <- function(qgraph_obj,
         legend.position = "bottom"
       )
 
+    # Asignar clase personalizada para suprimir advertencias al imprimir
+    class(Figura) <- c("silent_gg", class(Figura))
+    assign("print.silent_gg",
+           function(x, ...) suppressWarnings(NextMethod()),
+           envir = .GlobalEnv)
+
     ################################################################################
     # 7A) Devolver tabla y gráfico (caso dual)
     ################################################################################
@@ -171,13 +176,12 @@ centrality_plots <- function(qgraph_obj,
   ################################################################################
   # 5B) Preparar paleta y leyenda para una sola métrica
   ################################################################################
-  pal_single        <- setNames(color_palette[1], measure0)
+  pal_single         <- setNames(color_palette[1], measure0)
   legend_lbls_single <- setNames(measure0, measure0)
 
   ################################################################################
-  # 6B) ggplot para solo measure0 (línea + puntos)
+  # 6B) Construir ggplot para solo measure0 (línea + puntos) y suprimir warnings al imprimir
   ################################################################################
-  # Definir qué variable usar en eje y:
   y_var_single <- if (use_abbrev) quo(Abrev) else quo(full_name)
 
   Figura <- ggplot(
@@ -209,6 +213,12 @@ centrality_plots <- function(qgraph_obj,
       axis.title.x    = element_text(size = 12),
       legend.position = "bottom"
     )
+
+  # Asignar clase personalizada para suprimir advertencias al imprimir
+  class(Figura) <- c("silent_gg", class(Figura))
+  assign("print.silent_gg",
+         function(x, ...) suppressWarnings(NextMethod()),
+         envir = .GlobalEnv)
 
   ################################################################################
   # 7B) Devolver tabla y gráfico (caso single)
