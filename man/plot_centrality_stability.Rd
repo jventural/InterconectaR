@@ -1,66 +1,75 @@
 \name{plot_centrality_stability}
 \alias{plot_centrality_stability}
-\title{Plot and Combine Centrality Stability and Non-Parametric Bootstrapping Results}
+\title{Plot and Combine Centrality Stability and Non-Parametric Bootstrapping Results into a ggplot Object}
 
 \description{
-This function generates two plots: one for centrality stability metrics and another for non-parametric bootstrapping results. It combines the two plots into a single layout and saves the visualization as a high-resolution image.
+This function generates two plots—one for centrality stability metrics and another for non-parametric bootstrapping results—and combines them into a single \code{ggplot2} layout. Instead of saving internally, it returns a single \code{ggplot} object (of class \code{"silent_plot"}) so that users can call \code{ggsave()} or further modify it.
 
-\strong{Note}: This function automatically installs and loads the required libraries if they are not already available. The required libraries are \code{ggplot2}, \code{ggpubr}, and \code{scales}.
+\strong{Note}: Required libraries (\code{ggplot2}, \code{patchwork}, and \code{scales}) are installed and loaded automatically if missing.
 }
 
 \usage{
 plot_centrality_stability(caseDroppingBoot, nonParametricBoot,
 statistics = "bridgeStrength",
-output_path = "Output/Figura_2.jpg",
-height = 5, width = 9, dpi = 600,
 labels = FALSE)
 }
 
 \arguments{
-\item{caseDroppingBoot}{An object containing the results of a case-dropping bootstrap analysis. This is used to create the first plot showing centrality stability metrics.}
-\item{nonParametricBoot}{An object containing non-parametric bootstrapping results. This is used to create the second plot showing bootstrapped edge statistics.}
-\item{statistics}{A character string specifying the centrality metric to plot for \code{caseDroppingBoot}. Default is \code{"bridgeStrength"}.}
-\item{output_path}{A character string specifying the file path and name for the output image. Default is \code{"Output/Figura_2.jpg"}.}
-\item{height}{Numeric. The height of the output image in inches. Default is \code{5}.}
-\item{width}{Numeric. The width of the output image in inches. Default is \code{9}.}
-\item{dpi}{Numeric. The resolution of the output image in dots per inch (DPI). Default is \code{600}.}
-\item{labels}{Logical. Whether to include labels on the plots. Default is \code{FALSE}.}
+\item{\code{caseDroppingBoot}}{An object containing the results of a case‐dropping bootstrap analysis. Used to create the first plot showing centrality stability metrics.}
+\item{\code{nonParametricBoot}}{An object containing non‐parametric bootstrapping results. Used to create the second plot showing bootstrapped edge statistics.}
+\item{\code{statistics}}{A character string specifying the centrality metric to plot for \code{caseDroppingBoot}. Default is \code{"bridgeStrength"}.}
+\item{\code{labels}}{Logical. Whether to include node labels on the plots. Default is \code{FALSE}.}
 }
 
 \details{
-The function performs the following steps:
+When \code{plot_centrality_stability} is called, the function:
 \itemize{
-\item Generates a plot (\code{p1}) for centrality stability metrics using \code{caseDroppingBoot} and the specified \code{statistics}.
-\item Generates a second plot (\code{p2}) for bootstrapped edge statistics using \code{nonParametricBoot}.
-\item Combines the two plots into a single layout using \code{ggpubr::ggarrange()}.
-\item Saves the combined plot as a high-resolution JPEG image at the specified \code{output_path}.
+\item Ensures that \code{ggplot2}, \code{patchwork}, and \code{scales} are installed and loaded.
+\item Creates \code{p1} by calling \code{plot(caseDroppingBoot, statistics = statistics, labels = labels)} and then adding a custom \code{scale_y_continuous()} range from
+−
+1
+−1 to
+1
+1 with breaks every
+0.10
+0.10. Any “Scale for y is already present…” warning is suppressed.
+\item Creates \code{p2} by calling \code{plot(nonParametricBoot, labels = labels, order = "sample", statistics = "edge")}, again suppressing scale‐related warnings.
+\item Combines \code{p1} and \code{p2} side‐by‐side using \code{patchwork::plot_layout(ncol = 2)} and adds automatic tags “A” and “B” via \code{plot_annotation(tag_levels = "A")}, suppressing any residual warnings during combination.
+\item Assigns class \code{"silent_plot"} to the resulting \code{ggplot} so that printing or saving with \code{ggsave()} will not display the “Scale for y is already present…” message.
 }
-
-This function is particularly useful for visualizing the stability and variability of network metrics, making it easy to compare results from different methods.
+Since the function returns a fully composed \code{ggplot} object, users can save it externally (e.g., \code{ggsave()}) or add additional annotations as needed.
 }
 
 \value{
-The function returns the combined plot object as a \code{ggpubr::ggarrange} object, allowing for further customization or inspection in R. The output is also saved as a JPEG file.
+A \code{ggplot} object (class \code{"silent_plot"}). When printed or saved, scale‐duplication warnings are suppressed.
 }
 
 \examples{
-Generate and save the combined plot
+\dontrun{
+
+# Suponiendo que caseDroppingBoot y nonParametricBoot ya están creados:
 combined_plot <- plot_centrality_stability(
 caseDroppingBoot = caseDroppingBoot,
 nonParametricBoot = nonParametricBoot,
 statistics = "bridgeStrength",
-output_path = "Output/Figura_2_Final.jpg",
-height = 5,
-width = 9,
-dpi = 600,
 labels = FALSE
 )
 
-Inspect the combined plot
-print(combined_plot)
+# Guardar externamente con ggsave (9" × 5" a 600 dpi)
+ggsave(
+filename = "Figura_2.png",
+plot = combined_plot,
+width = 9,
+height = 5,
+units = "in",
+dpi = 600
+)
+
+# Inspeccionar en R
+combined_plot
+}
 }
 
 \author{
 Dr. José Ventura-León
 }
-
