@@ -3,16 +3,7 @@
 \title{Combine Centrality Network and Comparative Plots into a Single ggplot Object}
 
 \description{
-The \code{combine_graphs_centrality} function generates a composite \pkg{ggplot2} object by embedding a centrality network graph (rendered via \code{qgraph}) as a raster alongside a separate comparative \pkg{ggplot2} visualization. Rather than writing the network out to disk permanently, it temporarily saves the \code{qgraph} output as a PNG, reads it back in, and places it into a blank \code{ggplot} canvas. The final object belongs to a custom class (\code{"silent_gg"}) that suppresses the typical “No shared levels found…” warning when printed or saved. Users can then further annotate, modify, or export the combined figure using standard \pkg{ggplot2} workflows (e.g., via \code{ggsave()}).
-
-\strong{Key Features}:
-\itemize{
-\item Integrates a \code{qgraph}-generated centrality network (with node grouping, pie‐chart slices from \code{error_Model}, edge labels, custom layout, etc.) into a \code{ggplot2} canvas as a raster.
-\item Places the network raster (\code{p1}) side‐by‐side with any user‐supplied \pkg{ggplot2} object (\code{Figura1_Derecha}) via \pkg{patchwork}, controlling the number of columns (\code{ncol}) and their relative widths (\code{widths}).
-\item Automatically installs and loads required packages: \code{ggplot2}, \code{qgraph}, \code{png}, \code{grid}, \code{patchwork}, and \code{Cairo}.
-\item Offers optional abbreviation of node labels to three characters via \code{abbreviate_labels}.
-\item Wraps the combined object in class \code{"silent_gg"} and defines a \code{print.silent_gg} method that uses \code{suppressWarnings()}, thereby hiding the common \enquote{No shared levels found…} warning when rendering.
-}
+The \code{combine_graphs_centrality} function produces a unified \pkg{ggplot2} object by embedding a network‐centrality graph (generated via \code{qgraph}) as a raster image alongside a user‐provided comparative \pkg{ggplot2} plot. Internally, it renders the \code{qgraph} visualization to a temporary PNG (using \code{CairoPNG()}), reads that PNG back into R as a \code{rasterGrob}, and places it onto an otherwise blank \pkg{ggplot2} canvas. Meanwhile, the supplied \code{Figura1_Derecha} (e.g., a line‐and‐point plot) has its legend relabeled from “Métrica” to “Metric,” its legend items reordered to display one below the other (with labels “Bridge EI” and “EI”), and its legend positioned vertically on the right. Finally, both panels are arranged side‐by‐side via \pkg{patchwork}, with user‐defined column counts and relative widths. The resulting object inherits the custom class \code{"silent_gg"}, which suppresses the common “No shared levels found…” warning upon printing or saving.
 }
 
 \usage{
@@ -31,56 +22,61 @@ legend.cex = 0.1
 }
 
 \arguments{
-\item{\code{Figura1_Derecha}}{A \pkg{ggplot2} object representing the comparative plot (e.g., a bar chart, scatterplot, etc.) to place alongside the network raster.}
+\item{\code{Figura1_Derecha}}{A \pkg{ggplot2} object (e.g., a line‐and‐point plot) to be placed to the right of the network raster. Its legend will be modified—title changed to “Metric,” items relabeled as “Bridge EI” and “EI,” displayed vertically, and positioned on the right side of the plot.}
 \item{\code{network}}{A list with at least two components:
 \itemize{
-\item \code{$graph}: a square numeric adjacency matrix suitable for \code{qgraph}.
-\item \code{$labels}: a character vector of node labels (length must match the number of rows/columns of \code{graph}).
-}
-}
-\item{\code{groups}}{A vector or list specifying node‐group membership for coloring in the \code{qgraph} visualization. Its length must equal the number of nodes (rows/columns) in \code{network$graph}.}
-\item{\code{error_Model}}{A numeric vector (or matrix) of length (or dimension) matching the number of nodes. Each entry supplies values for pie‐chart slices at each node in the network.}
+\item \code{$graph}: A square numeric adjacency matrix suitable for \code{qgraph}.
+\item \code{$labels}: A character vector of node labels, of length matching the number of rows/columns in \code{graph}.
+}}
+\item{\code{groups}}{A vector or list specifying group membership for each node (used by \code{qgraph} to color nodes). Must have length equal to the number of nodes in \code{network$graph}.}
+\item{\code{error_Model}}{A numeric vector (or matrix) whose length (or row dimension) equals the number of nodes. Values are used to draw pie‐chart slices at each node in the network.}
 \item{\code{labels}}{Optional. A character vector of custom node labels. If \code{NULL}, \code{network$labels} is used.}
 \item{\code{abbreviate_labels}}{Logical. If \code{TRUE}, node labels (from \code{labels} or \code{network$labels}) are truncated to their first three characters before plotting. Default is \code{FALSE}.}
-\item{\code{ncol}}{Integer. Number of columns in the final combined layout (via \pkg{patchwork}). Default is \code{2}.}
-\item{\code{widths}}{Numeric vector of length two specifying the relative widths of the network raster panel (\code{p1}) and \code{Figura1_Derecha}, respectively. Default is \code{c(0.50, 0.60)}.}
-\item{\code{dpi}}{Integer. Resolution (dots per inch) for the temporary PNG output of the \code{qgraph} graph. Higher values yield a finer raster. Default is \code{600}.}
-\item{\code{legend.cex}}{Numeric. Controls the legend text size in the \code{qgraph} output. Default is \code{0.1}.}
+\item{\code{ncol}}{Integer. Number of columns in the final combined layout via \pkg{patchwork}. Default is \code{2}.}
+\item{\code{widths}}{Numeric vector of length two specifying the relative widths of the network raster panel (left) and \code{Figura1_Derecha} (right). Default is \code{c(0.50, 0.60)}.}
+\item{\code{dpi}}{Integer. Resolution (dots per inch) for the temporary PNG output of the \code{qgraph} graph. Higher values produce finer raster detail. Default is \code{600}.}
+\item{\code{legend.cex}}{Numeric. Controls the text size of the legend in the \code{qgraph} output. Default is \code{0.1}.}
 }
 
 \details{
-When \code{combine_graphs_centrality} is called:
+When \code{combine_graphs_centrality()} is invoked:
 \enumerate{
-\item The function verifies that \pkg{ggplot2}, \pkg{qgraph}, \pkg{png}, \pkg{grid}, \pkg{patchwork}, and \pkg{Cairo} are installed; if any are missing, it installs and loads them.
-\item If \code{abbreviate_labels = TRUE}, node labels are replaced by their first three characters.
-\item A temporary PNG file (\code{tmp_file}) is created via \code{Cairo::CairoPNG()}, using the specified \code{dpi}, width = 1600 pixels, height = 1000 pixels.
-\item \code{qgraph} renders the network:
+\item Required packages (\pkg{ggplot2}, \pkg{qgraph}, \pkg{png}, \pkg{grid}, \pkg{patchwork}, and \pkg{Cairo}) are verified; any missing ones are installed and loaded automatically.
+\item If \code{abbreviate_labels = TRUE}, the function truncates each node label to its first three characters via an internal \code{abbreviate_names()} helper.
+\item A temporary PNG file (\code{tmp_file}) is created via \code{Cairo::CairoPNG()} with dimensions 1600×1000 pixels at the specified \code{dpi}.
+\item \code{qgraph()} draws the network:
 \itemize{
-\item \code{groups} defines node coloring.
-\item \code{curveAll = 2}, \code{vsize = 18}, \code{esize = 18}, \code{palette = "pastel"}, \code{layout = "spring"} and other aesthetic parameters control node size, edge size, layout, edge labels, etc.
-\item \code{labels = final_labels} supplies the node names.
-\item \code{legend.cex} sets legend text scaling.
-\item \code{pie = error_Model} draws pie charts at each node if \code{error_Model} is provided.
-\item \code{layoutScale = c(0.9, 0.9)}, \code{GLratio = 2}, and \code{edge.label.cex = 1} further refine the layout and edge‐label appearance.
+\item \code{groups} determines node coloring.
+\item A spring layout (\code{layout = "spring"}) with curved edges (\code{curveAll = 2}).
+\item Node size (\code{vsize = 18}), edge size (\code{esize = 18}), pastel palette, pie‐chart slices at nodes (\code{pie = error_Model}), and edge labels (\code{edge.labels = TRUE}, \code{edge.label.cex = 1}).
+\item \code{labels = final_labels} supplies node names (abbreviated or original).
+\item \code{legend.cex} sets scaling of the legend’s text for node‐group keys (if displayed).
 \item \code{details = FALSE} suppresses interactive details.
+\item \code{layoutScale = c(0.9, 0.9)} and \code{GLratio = 2} refine the layout.
 }
-\item The PNG device is closed (\code{dev.off()}), producing \code{tmp_file}.
-\item \code{png::readPNG(tmp_file)} reads the PNG into R as a raster array, which \code{grid::rasterGrob()} converts into a \code{grob} (\code{g1_raster}).
-\item An empty \pkg{ggplot2} canvas (\code{p1}) is created, and \code{annotation_custom(g1_raster, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf)} places the network raster to fill the panel. \code{theme_void()} removes axes and margins.
-\item \code{p1} (the rasterized network) and \code{Figura1_Derecha} are combined side‐by‐side using \code{patchwork::plot_layout(ncol = ncol, widths = widths)}. By default, \code{ncol = 2}, so \code{p1} occupies the first column and \code{Figura1_Derecha} occupies the second.
-\item A custom class \code{"silent_gg"} is assigned to the combined \pkg{ggplot} object, and a \code{print.silent_gg} method is defined in the global environment to wrap \code{suppressWarnings(NextMethod())}, thereby hiding warnings such as “No shared levels found…”.
+\item The PNG device is closed (\code{dev.off()}), creating a static PNG file at \code{tmp_file}.
+\item \code{png::readPNG(tmp_file)} reads the PNG into R as an array; \code{grid::rasterGrob()} converts it into a \code{grob} (\code{g1_raster}).
+\item An empty \pkg{ggplot2} canvas (\code{p1}) is built and \code{annotation_custom(g1_raster, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf)} places the network raster to fill the entire panel. \code{theme_void()} removes axes, gridlines, and margins.
+\item \code{Figura1_Derecha} (the supplied comparative plot) is modified:
+\itemize{
+\item \code{ggplot2::labs(color = "Metric", shape = "Metric")} changes the legend title from “Métrica” to “Metric.”
+\item \code{ggplot2::scale_color_discrete(labels = c("Bridge EI", "EI"))} and \code{ggplot2::scale_shape_discrete(labels = c("Bridge EI", "EI"))} relabel the legend items.
+\item \code{ggplot2::theme(legend.direction = "vertical", legend.position = "right", legend.box = "vertical")} forces a vertical legend on the right side of the plot, with one item per row.
+}
+\item \code{p1} and the modified \code{Figura1_Derecha} are combined side‐by‐side using \pkg{patchwork::plot_layout(ncol = ncol, widths = widths)}. By default, \code{ncol = 2}, so \code{p1} occupies the first column and \code{Figura1_Derecha} the second.
+\item The combined \pkg{ggplot2} object is assigned class \code{"silent_gg"}. A custom \code{print.silent_gg} method is defined in the global environment to wrap \code{suppressWarnings(NextMethod())}, thereby silencing warnings such as “No shared levels found…” when rendering or saving.
 \item The temporary PNG file (\code{tmp_file}) is deleted.
-\item The final combined object is returned. If \code{show_plot = TRUE}, it is printed immediately (with suppressed warnings). If \code{show_plot = FALSE}, it is returned invisibly without printing.
+\item The final combined object is returned. Since it is of class \code{"silent_gg"}, printing or saving it will not emit common \code{ggplot2} legend warnings. It can be passed directly to \code{ggsave()} for export or further customized with additional \pkg{ggplot2} layers.
 }
 }
 
 \value{
-A \pkg{ggplot2} object of class \code{"silent_gg"} that contains:
+A \pkg{ggplot2} object of class \code{"silent_gg"} containing:
 \itemize{
-\item The rasterized network visualization on the left.
-\item The user‐provided comparative \pkg{ggplot2} object (\code{Figura1_Derecha}) on the right.
+\item The \code{qgraph}‐generated network raster on the left panel.
+\item The user‐supplied \code{Figura1_Derecha} (with updated legend title “Metric,” items “Bridge EI” and “EI” displayed vertically on the right) on the right panel.
 }
-Printing or saving this object suppresses any “No shared levels found…” message. You can pass it directly to \code{ggsave()} or further modify it with additional \pkg{ggplot2} layers.
+Printing or saving this object will suppress any “No shared levels found…” message. Use \code{ggsave()} or further \pkg{ggplot2} modifications as needed.
 }
 
 \examples{
@@ -88,22 +84,23 @@ Printing or saving this object suppresses any “No shared levels found…” me
 library(ggplot2)
 library(qgraph)
 
-# 1. Simulate an adjacency matrix and labels
+# 1. Create a random adjacency matrix and labels
 set.seed(42)
 adj_mat <- matrix(sample(0:1, 100, replace = TRUE), 10, 10)
 diag(adj_mat) <- 0
 network <- list(graph = adj_mat, labels = LETTERS[1:10])
 
-# 2. Define node groups and error_Model (pie‐slice values)
+# 2. Define node groups and error_Model (pie‐chart slice values)
 groups <- rep(1:2, each = 5)
 error_Model <- matrix(runif(20, 0, 1), nrow = 10, ncol = 2)
 
-# 3. Create a comparative ggplot2 object (Figura1_Derecha)
+# 3. Build a comparative ggplot2 object with a line‐and‐point plot
 data_pts <- data.frame(x = 1:10, y = rnorm(10))
-Figura1_Derecha <- ggplot(data_pts, aes(x = x, y = y)) +
+Figura1_Derecha <- ggplot(data_pts, aes(x = x, y = y, color = factor(x %% 2), shape = factor(x %% 2))) +
 geom_point(size = 3) +
+geom_line() +
 theme_minimal() +
-labs(title = "Comparative Plot")
+labs(title = "Comparative Line & Point Plot", color = "Métrica", shape = "Métrica")
 
 # 4. Combine network + comparative plot without label abbreviation
 combined_plot <- combine_graphs_centrality(
@@ -119,7 +116,7 @@ dpi = 300,
 legend.cex = 0.2
 )
 
-# 5. Save the combined plot (12" × 5" at 300 dpi)
+# 5. Save the combined figure (e.g., 12" × 5" at 300 dpi)
 ggsave(
 filename = "combined_centrality_plot.png",
 plot = combined_plot,
@@ -129,7 +126,7 @@ units = "in",
 dpi = 300
 )
 
-# 6. Combine network + comparative plot with abbreviated labels
+# 6. Combine network + comparative plot with abbreviated node labels
 combined_plot_abbrev <- combine_graphs_centrality(
 Figura1_Derecha = Figura1_Derecha,
 network = network,
@@ -143,7 +140,7 @@ dpi = 600,
 legend.cex = 0.1
 )
 
-# 7. Display it
+# 7. Display the abbreviated‐label version
 print(combined_plot_abbrev)
 }
 }

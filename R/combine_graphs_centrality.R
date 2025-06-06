@@ -1,9 +1,9 @@
-combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Model,
-                                      labels = NULL,
-                                      abbreviate_labels = FALSE,
-                                      ncol = 2, widths = c(0.50, 0.60),
-                                      dpi = 600,
-                                      legend.cex = 0.1) {
+combine_graphs_centrality  <- function(Figura1_Derecha, network, groups, error_Model,
+                                       labels = NULL,
+                                       abbreviate_labels = FALSE,
+                                       ncol = 2, widths = c(0.50, 0.60),
+                                       dpi = 600,
+                                       legend.cex = 0.1) {
   # Verificar e instalar librerías necesarias
   required_packages <- c("ggplot2", "qgraph", "png", "grid", "patchwork", "Cairo")
   for (pkg in required_packages) {
@@ -59,8 +59,19 @@ combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Mo
     ) +
     ggplot2::theme_void()
 
-  # Combinar p1 (qgraph) y Figura1_Derecha usando patchwork
-  combinado <- p1 + Figura1_Derecha +
+  # Modificar la leyenda del gráfico de líneas y puntos
+  Figura1_Derecha_modificada <- Figura1_Derecha +
+    ggplot2::labs(color = "Metric", shape = "Metric") +
+    ggplot2::scale_color_discrete(labels = c("Bridge EI", "EI")) +
+    ggplot2::scale_shape_discrete(labels = c("Bridge EI", "EI")) +
+    ggplot2::theme(
+      legend.direction = "vertical",
+      legend.position = "right",
+      legend.box = "vertical"
+    )
+
+  # Combinar p1 (qgraph) y Figura1_Derecha_modificada usando patchwork
+  combinado <- p1 + Figura1_Derecha_modificada +
     patchwork::plot_layout(ncol = ncol, widths = widths)
 
   # Asignar clase personalizada y definir método print para suprimir el aviso
