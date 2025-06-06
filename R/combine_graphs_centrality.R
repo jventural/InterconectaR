@@ -1,8 +1,9 @@
 combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Model,
-                                       labels = NULL,
-                                       ncol = 2, widths = c(0.50, 0.60),
-                                       dpi = 600,
-                                       legend.cex = 0.1) {
+                                      labels = NULL,
+                                      abbreviate_labels = FALSE,
+                                      ncol = 2, widths = c(0.50, 0.60),
+                                      dpi = 600,
+                                      legend.cex = 0.1) {
   # Verificar e instalar librerías necesarias
   required_packages <- c("ggplot2", "qgraph", "png", "grid", "patchwork", "Cairo")
   for (pkg in required_packages) {
@@ -10,6 +11,17 @@ combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Mo
       install.packages(pkg, dependencies = TRUE)
       library(pkg, character.only = TRUE)
     }
+  }
+
+  # Función para abreviar nombres a 3 letras
+  abbreviate_names <- function(labels) {
+    substr(labels, 1, 3)
+  }
+
+  # Determinar las etiquetas a usar
+  final_labels <- if (is.null(labels)) network$labels else labels
+  if (abbreviate_labels) {
+    final_labels <- abbreviate_names(final_labels)
   }
 
   # Generar el gráfico de qgraph y guardarlo temporalmente como PNG
@@ -23,7 +35,7 @@ combine_graphs_centrality <- function(Figura1_Derecha, network, groups, error_Mo
          palette = "pastel",
          layout = "spring",
          edge.labels = TRUE,
-         labels = if (is.null(labels)) network$labels else labels,
+         labels = final_labels,
          legend.cex = legend.cex,
          legend = TRUE,
          details = FALSE,
