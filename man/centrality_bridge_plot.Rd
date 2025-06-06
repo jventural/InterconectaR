@@ -19,8 +19,7 @@ centrality_bridge_plot(
 networks_groups,
 group_names = c("Mujer", "Varón"),
 measure = "Bridge Expected Influence (1-step)",
-color_palette = c("#FF5733", "#33FFCE"),
-labels = NULL
+color_palette = c("#FF5733", "#33FFCE")
 )
 }
 
@@ -29,7 +28,6 @@ labels = NULL
 \item{group_names}{A character vector of length 2 specifying the names of the groups. Default is \code{c("Mujer", "Varón")}.}
 \item{measure}{The bridge centrality measure to compare for the networks (e.g., \code{"Bridge Expected Influence (1-step)"}). Default is \code{"Bridge Expected Influence (1-step)"}.}
 \item{color_palette}{A character vector specifying colors for the groups in the plot. Default is \code{c("#FF5733", "#33FFCE")}.}
-\item{labels}{Optional. A character vector of custom labels for the nodes. If \code{NULL}, the labels from the network objects will be used.}
 }
 
 \details{

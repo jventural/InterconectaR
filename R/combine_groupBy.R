@@ -1,10 +1,21 @@
-combine_groupBy <- function(red_group, plot_centralidad_group, bridge_plot_group = NULL,
-                             output_path = "combine_three_graphs.jpg",
-                             height = 10, width_a = 8, width_bc = 4.5,
-                             dpi = 300,
-                             show_plot = TRUE) {
-  # Verificar e instalar librerías necesarias
-  required_packages <- c("ggplot2", "gridExtra", "grid", "Cairo", "magick", "cowplot")
+combine_groupBy <- function(
+    red_group,
+    plot_centralidad_group,
+    bridge_plot_group = NULL,
+    width_a = 8,
+    width_bc = 4.5,
+    show_plot = TRUE
+) {
+  # — 0) Instalar/cargar librerías necesarias --------------------------------
+  required_packages <- c(
+    "ggplot2",    # Para objetos ggplot
+    "gridExtra",  # Para arrangeGrob
+    "grid",       # Para grobs y viewports
+    "cowplot",    # Para ggdraw y draw_label
+    "ggplotify",  # Para convertir ggplot/grob a gtable
+    "magick",     # Para image_graph e image_write (si red_group es magick-image)
+    "png"         # Para readPNG
+  )
   for (pkg in required_packages) {
     if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
       install.packages(pkg, dependencies = TRUE)
@@ -12,13 +23,31 @@ combine_groupBy <- function(red_group, plot_centralidad_group, bridge_plot_group
     }
   }
 
-  # Convertir el gráfico red_group en un objeto raster (imagen)
-  temp_file <- tempfile(fileext = ".png")
-  magick::image_write(red_group, path = temp_file)
-  p12_img <- png::readPNG(temp_file)
-  p12_raster <- grid::rasterGrob(p12_img, interpolate = TRUE)
+  # — 1) Procesar 'red_group' según su tipo ----------------------------------
+  # Si es una magick-image, leerla a rasterGrob; si es ggplot, convertir a grob;
+  # si ya es grob/gtable, usarla directamente.
+  if (inherits(red_group, "magick-image")) {
+    temp_file <- tempfile(fileext = ".png")
+    magick::image_write(red_group, path = temp_file)
+    png_img   <- png::readPNG(temp_file)
+    red_grob  <- grid::rasterGrob(png_img, interpolate = TRUE)
+    unlink(temp_file)
 
-  # Crear etiquetas para identificar cada subgráfico
+  } else if (inherits(red_group, "ggplot")) {
+    red_grob <- ggplotify::as.grob(red_group)
+
+  } else if (
+    inherits(red_group, "gtable") ||
+    inherits(red_group, "grob") ||
+    inherits(red_group, "zeroGrob")
+  ) {
+    red_grob <- red_group
+
+  } else {
+    stop("`red_group` debe ser un ggplot, un grob (grid) o una magick-image.")
+  }
+
+  # — 2) Crear etiquetas A, B y C --------------------------------------------
   label_a <- cowplot::ggdraw() +
     cowplot::draw_label("A", fontface = "bold", size = 14, x = 0.02, hjust = 0) +
     theme_void()
@@ -29,58 +58,85 @@ combine_groupBy <- function(red_group, plot_centralidad_group, bridge_plot_group
     cowplot::draw_label("C", fontface = "bold", size = 14, x = 0.02, hjust = 0) +
     theme_void()
 
-  # Ajustar tamaños de los gráficos B y C
-  b_plot <- cowplot::ggdraw(plot_centralidad_group) + theme(plot.margin = margin(5, 5, 5, 5))
-  c_plot <- if (!is.null(bridge_plot_group)) {
-    cowplot::ggdraw(bridge_plot_group) + theme(plot.margin = margin(5, 5, 5, 5))
+  # — 3) Preparar los subplots de centralidad (B) y bridge (C) ---------------
+  b_plot <- cowplot::ggdraw(plot_centralidad_group) +
+    theme(plot.margin = grid::unit(c(5, 5, 5, 5), "pt"))
+
+  if (!is.null(bridge_plot_group)) {
+    c_plot <- cowplot::ggdraw(bridge_plot_group) +
+      theme(plot.margin = grid::unit(c(5, 5, 5, 5), "pt"))
   } else {
-    cowplot::ggdraw() + theme_void() # Marcador de posición vacío para evitar errores
+    c_plot <- cowplot::ggdraw() + theme_void()
   }
 
-  # Determinar alturas y proporciones dinámicas dependiendo de si bridge_plot_group es NULL
+  # — 4) Construir la “columna derecha” (solo B, o B + C) ---------------------
   if (is.null(bridge_plot_group)) {
-    # Cuando bridge_plot_group es NULL: proporciones 50%-25%
-    right_col <- gridExtra::arrangeGrob(
-      gridExtra::arrangeGrob(label_b, b_plot, ncol = 1, heights = c(0.1, 0.9))
+    right_col_grob <- gridExtra::arrangeGrob(
+      gridExtra::arrangeGrob(
+        label_b,
+        b_plot,
+        ncol    = 1,
+        heights = c(0.1, 0.9)
+      ),
+      ncol = 1
     )
-    widths <- c(2, 1) # Red ocupa 2/3, centralidad ocupa 1/3
+    rel_widths <- c(width_a, width_bc)
+
   } else {
-    # Cuando bridge_plot_group no es NULL: proporciones normales (50%-50% dentro de la derecha)
-    right_col <- gridExtra::arrangeGrob(
-      gridExtra::arrangeGrob(label_b, b_plot, ncol = 1, heights = c(0.1, 0.9)),
-      gridExtra::arrangeGrob(label_c, c_plot, ncol = 1, heights = c(0.1, 0.9)),
-      nrow = 2, # Dos filas para B y C
-      heights = c(0.5, 0.5) # Mitad y mitad
+    right_col_grob <- gridExtra::arrangeGrob(
+      gridExtra::arrangeGrob(
+        label_b,
+        b_plot,
+        ncol    = 1,
+        heights = c(0.1, 0.9)
+      ),
+      gridExtra::arrangeGrob(
+        label_c,
+        c_plot,
+        ncol    = 1,
+        heights = c(0.1, 0.9)
+      ),
+      ncol    = 1,
+      heights = c(0.5, 0.5)
     )
-    widths <- c(width_a, width_bc) # Proporciones normales
+    rel_widths <- c(width_a, width_bc)
   }
 
-  # Combinar los gráficos con las etiquetas
-  left_col <- gridExtra::arrangeGrob(
+  # — 5) Construir la “columna izquierda” (A + red_grob escalado) -------------
+  # Para forzar que red_grob ocupe el 99% de la celda, lo envolvemos en un gTree
+  # con un viewport que le da casi todo el espacio (0.99 "npc").
+  raster_vp <- grid::gTree(
+    children = grid::gList(red_grob),
+    vp = grid::viewport(
+      width  = grid::unit(0.99, "npc"),  # 99% del ancho de la celda
+      height = grid::unit(0.99, "npc"),  # 99% de la altura de la celda
+      just   = "centre"
+    )
+  )
+
+  left_col_grob <- gridExtra::arrangeGrob(
     label_a,
-    p12_raster,
-    ncol = 1,
-    heights = c(0.05, 0.95) # Etiqueta y gráfico completo
+    raster_vp,
+    ncol    = 1,
+    heights = c(0.05, 0.95)
   )
 
-  combined_plot <- gridExtra::grid.arrange(
-    left_col,
-    right_col,
-    ncol = 2,
-    widths = widths # Ajustar anchos de las columnas
+  # — 6) Unir izquierda y derecha en un solo gtable --------------------------
+  combined_grob <- gridExtra::arrangeGrob(
+    left_col_grob,
+    right_col_grob,
+    ncol   = 2,
+    widths = rel_widths
   )
 
-  # Mostrar o guardar el gráfico combinado
-  if (show_plot) {
-    grid::grid.newpage()
-    grid::grid.draw(combined_plot)
-  } else {
-    jpeg(output_path, width = (width_a + width_bc), height = height, units = "in", res = dpi)
-    grid::grid.draw(combined_plot)
-    dev.off()
-    message("Figure saved at: ", output_path)
+  # — 7) Convertir el gtable final a un objeto ggplot2 -----------------------
+  combined_gg <- ggplotify::as.ggplot(combined_grob)
+
+  # — 8) Mostrar en pantalla si show_plot = TRUE -----------------------------
+  if (isTRUE(show_plot)) {
+    print(combined_gg)
   }
 
-  # Eliminar el archivo temporal
-  unlink(temp_file)
+  # — 9) Devolver el objeto ggplot2 listo para ggsave() ----------------------
+  return(combined_gg)
 }

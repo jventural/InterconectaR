@@ -1,47 +1,45 @@
 plot_networks_by_group <- function(networks_by_group,
-                                   output_dir = "Figuras",
-                                   width = 14, height = 8, units = "in", res = 1000,
-                                   groups = list("Factor1" = 1:6, "Factor2" = 7:12),
-                                   labels = NULL,
-                                   pie = NULL,
-                                   legend.cex = 0.5,
-                                   show_plot = F) {
-  # Instalar la librería magick si no está disponible
-  library(magick)
-  # Obtener el layout promedio basado en el primer grupo
+                                    width = 14, height = 8, units = "in", res = 300,
+                                    groups = list("Factor1" = 1:6, "Factor2" = 7:12),
+                                    labels = NULL,
+                                    pie = NULL,
+                                    legend.cex = 0.5,
+                                    show_plot = FALSE) {
+  library(qgraph)
+  library(ggplot2)
+  library(patchwork)
+  library(png)
+  library(grid)
+
+  # Calcular diseño uniforme basado en el primer grupo
   L <- do.call(averageLayout, lapply(networks_by_group, function(x) x$graph))
 
-  # Crear el directorio de salida si no existe
-  if (!file.exists(output_dir)) {
-    dir.create(output_dir)
-  }
-
-  # Crear un archivo gráfico virtual
-  temp_file <- tempfile(fileext = ".png")
-  png(filename = temp_file, width = width, height = height, units = units, res = res)
-
-  # Determinar el número de gráficos y ajustar la disposición
+  # Número de grupos y disposición en patchwork
   n_groups <- length(networks_by_group)
   n_rows <- ceiling(sqrt(n_groups))
   n_cols <- ceiling(n_groups / n_rows)
 
-  # Configurar el panel de gráficos
-  par(mfrow = c(n_rows, n_cols))
-
-  for (i in seq_along(networks_by_group)) {
+  # Para cada grupo, crear un ggplot que contenga el qgraph como fondo
+  plots <- lapply(seq_along(networks_by_group), function(i) {
     group_name <- names(networks_by_group)[i]
+    net_obj    <- networks_by_group[[i]]
+    pie_values  <- if (!is.null(pie) && group_name %in% names(pie)) pie[[group_name]] else NULL
 
-    # Asignar valores de pie para el grupo actual, si existen
-    pie_values <- if (!is.null(pie) && group_name %in% names(pie)) pie[[group_name]] else NULL
-
-    qgraph(networks_by_group[[i]]$graph,
+    # Crear archivo temporal PNG para qgraph
+    tmp_png <- tempfile(fileext = ".png")
+    png(filename = tmp_png,
+        width  = width,
+        height = height,
+        units  = units,
+        res    = res)
+    qgraph(net_obj$graph,
            layout = L,
            palette = "ggplot2",
            groups = groups,
-           labels = if (is.null(labels)) networks_by_group[[i]][["labels"]] else labels,
-           pie = pie_values, # Valores de pastel específicos para el grupo
+           labels = if (is.null(labels)) net_obj[["labels"]] else labels,
+           pie = pie_values,
            title = paste0("Group: ", group_name),
-           title.cex = 2.0,  # Tamaño del título
+           title.cex = 2.0,
            edge.labels = TRUE,
            edge.label.cex = 1.5,
            edge.label.position = 0.5,
@@ -51,19 +49,33 @@ plot_networks_by_group <- function(networks_by_group,
            vsize = 12,
            curveAll = 2,
            minimum = 0.10)
-  }
+    dev.off()
 
-  # Cierra el dispositivo gráfico
-  dev.off()
+    # Leer el PNG como rasterGrob
+    img_raster <- png::readPNG(tmp_png)
+    g_raster <- grid::rasterGrob(img_raster, interpolate = TRUE)
+    unlink(tmp_png)
 
-  # Leer la imagen guardada en el objeto
-  img <- magick::image_read(temp_file)
+    # Envolver el raster en un ggplot vacío
+    p <- ggplot() +
+      annotation_custom(
+        grob = g_raster,
+        xmin = -Inf, xmax = Inf,
+        ymin = -Inf, ymax = Inf
+      ) +
+      theme_void() +
+      ggtitle(paste0("Group: ", group_name)) +
+      theme(plot.title = element_text(hjust = 0.5, size = 14))
 
-  # Mostrar el gráfico si se solicita
+    return(p)
+  })
+
+  # Combinar todos los ggplots con patchwork
+  combined <- wrap_plots(plots, ncol = n_cols)
+
   if (show_plot) {
-    print(img)
+    print(combined)
   }
 
-  # Retornar el objeto de imagen
-  return(img)
+  return(combined)
 }
