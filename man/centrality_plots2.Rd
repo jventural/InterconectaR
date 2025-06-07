@@ -1,13 +1,13 @@
-\name{centrality_plots}
-\alias{centrality_plots}
+\name{centrality_plots2}
+\alias{centrality_plots2}
 \title{Calculate and Visualize Centrality and Bridge Centrality Measures for Networks}
 
 \description{
-The \code{centrality_plots} function computes and visualizes one or two node‐level centrality metrics for a given network: a standard centrality measure (e.g., \code{ExpectedInfluence} or \code{Strength}) and, optionally, a bridge centrality measure (e.g., \code{Bridge Expected Influence (1-step)}). The function returns a data frame of z‐scored values and a \code{ggplot2} object that plots nodes (either full names or three‐letter abbreviations) along the y‐axis, with points and connecting lines representing each selected metric on the x‐axis.
+The \code{centrality_plots2} function computes and visualizes one or two node‐level centrality metrics for a given network: a standard centrality measure (e.g., \code{ExpectedInfluence} or \code{Strength}) and, optionally, a bridge centrality measure (e.g., \code{Bridge Expected Influence (1-step)}). The function returns a data frame of z‐scored values and a \code{ggplot2} object that plots nodes (either full names or three‐letter abbreviations) along the y‐axis, with points and connecting lines representing each selected metric on the x‐axis.
 }
 
 \usage{
-centrality_plots(
+centrality_plots2(
   qgraph_obj,
   network,
   groups = NULL,
@@ -97,7 +97,7 @@ A named list with two elements:
   groups_vec <- rep(1:2, each = 6)
 
   # 1) Compute and plot both Expected Influence and Bridge Expected Influence (1-step)
-  result_both <- centrality_plots(
+  result_both <- centrality_plots2(
     qgraph_obj    = ig_obj,
     network       = network,
     groups        = groups_vec,
@@ -113,7 +113,7 @@ A named list with two elements:
   print(result_both$plot)
 
   # 2) Compute and plot only Expected Influence using abbreviations
-  result_single <- centrality_plots(
+  result_single <- centrality_plots2(
     qgraph_obj    = ig_obj,
     network       = network,
     measure0      = "ExpectedInfluence",

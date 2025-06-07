@@ -1,4 +1,4 @@
-centrality_plots <- function(qgraph_obj,
+centrality_plots2 <- function(qgraph_obj,
                               network,
                               groups = NULL,
                               measure0 = "ExpectedInfluence",
