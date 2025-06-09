@@ -1,13 +1,13 @@
-\name{combine_graphs_centrality}
-\alias{combine_graphs_centrality}
+\name{combine_graphs_centrality2}
+\alias{combine_graphs_centrality2}
 \title{Combine Centrality Network and Comparative Plots into a Single ggplot Object}
 
 \description{
-The \code{combine_graphs_centrality} function produces a unified \pkg{ggplot2} object by embedding a network‐centrality graph (generated via \code{qgraph}) as a raster image alongside a user‐provided comparative \pkg{ggplot2} plot. Internally, it renders the \code{qgraph} visualization to a temporary PNG (using \code{CairoPNG()}), reads that PNG back into R as a \code{rasterGrob}, and places it onto an otherwise blank \pkg{ggplot2} canvas. Meanwhile, the supplied \code{Figura1_Derecha} (e.g., a line‐and‐point plot) has its legend relabeled from “Métrica” to “Metric,” its legend items reordered to display one below the other (with labels “Bridge EI” and “EI”), and its legend positioned vertically on the right. Finally, both panels are arranged side‐by‐side via \pkg{patchwork}, with user‐defined column counts and relative widths. The resulting object inherits the custom class \code{"silent_gg"}, which suppresses the common “No shared levels found…” warning upon printing or saving.
+The \code{combine_graphs_centrality2} function produces a unified \pkg{ggplot2} object by embedding a network‐centrality graph (generated via \code{qgraph}) as a raster image alongside a user‐provided comparative \pkg{ggplot2} plot. Internally, it renders the \code{qgraph} visualization to a temporary PNG (using \code{CairoPNG()}), reads that PNG back into R as a \code{rasterGrob}, and places it onto an otherwise blank \pkg{ggplot2} canvas. Meanwhile, the supplied \code{Figura1_Derecha} (e.g., a line‐and‐point plot) has its legend relabeled from “Métrica” to “Metric,” its legend items reordered to display one below the other (with labels “Bridge EI” and “EI”), and its legend positioned vertically on the right. Finally, both panels are arranged side‐by‐side via \pkg{patchwork}, with user‐defined column counts and relative widths. The resulting object inherits the custom class \code{"silent_gg"}, which suppresses the common “No shared levels found…” warning upon printing or saving.
 }
 
 \usage{
-combine_graphs_centrality(
+combine_graphs_centrality2(
 Figura1_Derecha,
 network,
 groups,
@@ -39,7 +39,7 @@ legend.cex = 0.1
 }
 
 \details{
-When \code{combine_graphs_centrality()} is invoked:
+When \code{combine_graphs_centrality2()} is invoked:
 \enumerate{
 \item Required packages (\pkg{ggplot2}, \pkg{qgraph}, \pkg{png}, \pkg{grid}, \pkg{patchwork}, and \pkg{Cairo}) are verified; any missing ones are installed and loaded automatically.
 \item If \code{abbreviate_labels = TRUE}, the function truncates each node label to its first three characters via an internal \code{abbreviate_names()} helper.
@@ -103,7 +103,7 @@ theme_minimal() +
 labs(title = "Comparative Line & Point Plot", color = "Métrica", shape = "Métrica")
 
 # 4. Combine network + comparative plot without label abbreviation
-combined_plot <- combine_graphs_centrality(
+combined_plot <- combine_graphs_centrality2(
 Figura1_Derecha = Figura1_Derecha,
 network = network,
 groups = groups,
@@ -127,7 +127,7 @@ dpi = 300
 )
 
 # 6. Combine network + comparative plot with abbreviated node labels
-combined_plot_abbrev <- combine_graphs_centrality(
+combined_plot_abbrev <- combine_graphs_centrality2(
 Figura1_Derecha = Figura1_Derecha,
 network = network,
 groups = groups,
