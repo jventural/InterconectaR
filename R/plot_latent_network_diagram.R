@@ -1,13 +1,17 @@
-plot_latent_network_diagram  <- function(model_object,
-                                         output_file,
-                                         node_labels = NULL,
-                                         color_scheme = NULL,
-                                         color_palette = "auto",
-                                         plot_settings = NULL,
-                                         device_settings = NULL,
-                                         edge_settings = NULL,
-                                         save_message = TRUE,
-                                         show_manifest = TRUE) {
+plot_latent_network_diagram <- function(model_object,
+                                        filename,
+                                        output_path = ".",
+                                        width = 9.5,
+                                        height = 6.5,
+                                        resolution = 1500,
+                                        node_labels = NULL,
+                                        color_scheme = NULL,
+                                        color_palette = "auto",
+                                        plot_settings = NULL,
+                                        device_settings = NULL,
+                                        edge_settings = NULL,
+                                        save_message = TRUE,
+                                        show_manifest = TRUE) {
 
   # Load required packages
   if (!require("semPlot", quietly = TRUE)) {
@@ -39,8 +43,11 @@ plot_latent_network_diagram  <- function(model_object,
   # Create LISREL model
   mod <- semPlot::lisrelModel(LY = lambda_est, PS = psi_est, TE = theta_est)
 
-  # Default device settings
-  default_device <- list(width = 9.5, height = 6.5, units = 'in', res = 1500)
+  # Create complete output file path
+  output_file <- file.path(output_path, filename)
+
+  # Default device settings (can be overridden by device_settings parameter)
+  default_device <- list(width = width, height = height, units = 'in', res = resolution)
   device_settings <- if (is.null(device_settings)) default_device else modifyList(default_device, device_settings)
 
   # Default plot settings
