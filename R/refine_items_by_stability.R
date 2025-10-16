@@ -10,6 +10,10 @@ refine_items_by_stability <- function(
     ncores       = 11,
     max_iter     = 10
 ) {
+  require(EGAnet)
+  require(tidyverse)
+  require(patchwork)
+
   current_data     <- data
   removed_items    <- character()
   plots            <- list()
@@ -33,25 +37,42 @@ refine_items_by_stability <- function(
       ncores    = ncores
     )
 
-    # --- 2) Guardar gráfico por iteración ---
-    plots[[i]] <- boot.emat$stability$item.stability$plot
+    # --- 2) Forzar comunidades numéricas (solución a cambio en EGAnet >= 2.0.5) ---
+    boot.emat$EGA$wc <- as.numeric(as.factor(boot.emat$EGA$wc))
 
-    # --- 3) Consistencia estructural por dimensión ---
+    # --- 3) Gráfico EGA original ---
+    ega_plot <- suppressWarnings(plot(boot.emat$EGA)) +
+      ggtitle("Original Sample | EGA") +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 14, face = "bold")
+      )
+
+    # --- 4) Gráfico de estabilidad ---
+    stab_plot <- boot.emat$stability$item.stability$plot +
+      ggtitle("Stability | Model refining") +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 14, face = "bold")
+      )
+
+    # --- 5) Combinar ---
+    combined_plot <- ega_plot + stab_plot + patchwork::plot_layout(widths = c(1.2, 1))
+    plots[[i]] <- combined_plot
+
+    # --- 6) Consistencia estructural por dimensión ---
     df_dim <- data.frame(
       Dimension   = names(boot.emat$stability$dimension.stability$structural.consistency),
       Consistency = as.numeric(boot.emat$stability$dimension.stability$structural.consistency),
-      row.names   = NULL,
       stringsAsFactors = FALSE
     )
     dims_consistency[[i]] <- df_dim
 
-    # --- 4) Matriz all.dimensions por ítem ---
+    # --- 7) Matriz all.dimensions por ítem ---
     df_item_dim <- boot.emat$stability$item.stability$item.stability$all.dimensions %>%
       as.data.frame() %>%
       tibble::rownames_to_column(var = "Item")
     item_dimensions[[i]] <- df_item_dim
 
-    # --- 5) Comprobar estabilidad de ítems ---
+    # --- 8) Evaluar estabilidad de ítems ---
     vec <- boot.emat$stability$item.stability$item.stability$empirical.dimensions
     df_emp <- data.frame(
       item      = names(vec),
@@ -64,19 +85,16 @@ refine_items_by_stability <- function(
       message("✅ Todos los ítems alcanzaron estabilidad ≥ ", threshold,
               " tras ", i, " iteración(es).")
 
-      # --- 6) CORRECCIÓN: Renombrar y combinar dims_consistency con merge ---
       dims_renamed <- Map(function(df, iter) {
         colnames(df)[2] <- paste0("Consistency_iter", iter)
         df
       }, dims_consistency, seq_along(dims_consistency))
 
-      # Hacer merge por "Dimension" en lugar de cbind
       dims_consistency_wide <- Reduce(
         function(x, y) merge(x, y, by = "Dimension", all = TRUE),
         dims_renamed
       )
 
-      # --- 7) Renombrar y unir item_dimensions ---
       item_renamed <- Map(function(df, iter) {
         nm <- colnames(df)
         nm[-1] <- paste0("iter", iter, "_", nm[-1])
@@ -97,11 +115,12 @@ refine_items_by_stability <- function(
         item_dimensions         = item_dimensions,
         dims_consistency_wide   = dims_consistency_wide,
         item_dimensions_joined  = item_dimensions_joined,
-        n_iterations            = i  # Útil para saber cuántas iteraciones se necesitaron
+        combined_plot           = combined_plot,
+        n_iterations            = i
       ))
     }
 
-    # --- 8) Eliminar ítems inestables y seguir iterando ---
+    # --- 9) Eliminar ítems inestables ---
     message(sprintf("⚠️ Eliminando %d ítem(s): %s",
                     length(unstable), paste(unstable, collapse = ", ")))
     removed_items <- c(removed_items, unstable)
