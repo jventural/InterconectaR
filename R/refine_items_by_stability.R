@@ -64,12 +64,17 @@ refine_items_by_stability <- function(
       message("✅ Todos los ítems alcanzaron estabilidad ≥ ", threshold,
               " tras ", i, " iteración(es).")
 
-      # --- 6) Renombrar y combinar dims_consistency ---
+      # --- 6) CORRECCIÓN: Renombrar y combinar dims_consistency con merge ---
       dims_renamed <- Map(function(df, iter) {
-        colnames(df) <- paste0("iter", iter, "_", colnames(df))
+        colnames(df)[2] <- paste0("Consistency_iter", iter)
         df
       }, dims_consistency, seq_along(dims_consistency))
-      dims_consistency_wide <- do.call(data.frame, dims_renamed)
+
+      # Hacer merge por "Dimension" en lugar de cbind
+      dims_consistency_wide <- Reduce(
+        function(x, y) merge(x, y, by = "Dimension", all = TRUE),
+        dims_renamed
+      )
 
       # --- 7) Renombrar y unir item_dimensions ---
       item_renamed <- Map(function(df, iter) {
@@ -77,6 +82,7 @@ refine_items_by_stability <- function(
         nm[-1] <- paste0("iter", iter, "_", nm[-1])
         setNames(df, nm)
       }, item_dimensions, seq_along(item_dimensions))
+
       item_dimensions_joined <- Reduce(
         function(x, y) merge(x, y, by = "Item", all = TRUE),
         item_renamed
@@ -90,7 +96,8 @@ refine_items_by_stability <- function(
         dims_consistency        = dims_consistency,
         item_dimensions         = item_dimensions,
         dims_consistency_wide   = dims_consistency_wide,
-        item_dimensions_joined  = item_dimensions_joined
+        item_dimensions_joined  = item_dimensions_joined,
+        n_iterations            = i  # Útil para saber cuántas iteraciones se necesitaron
       ))
     }
 
