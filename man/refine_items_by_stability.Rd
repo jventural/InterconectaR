@@ -14,7 +14,8 @@ refine_items_by_stability(data,
                           seed_start = 2025,
                           type = "resampling",
                           ncores = 11,
-                          max_iter = 10)
+                          max_iter = 10,
+                          plot.itemStability = FALSE)
 }
 \arguments{
 \item{\code{data}}{A data frame or matrix of item responses (cases in rows, items in columns).}
@@ -27,6 +28,7 @@ refine_items_by_stability(data,
 \item{\code{type}}{Character. Type of resampling in \code{bootEGA}, either \code{"resampling"} or \code{"EBIC"}.}
 \item{\code{ncores}}{Integer. Number of CPU cores to use for parallel bootstrap computation.}
 \item{\code{max_iter}}{Integer. Maximum number of refinement iterations before the function stops with an error if stability is not achieved.}
+\item{\code{plot.itemStability}}{Should the plot be produced for item.replication. Defaults to FALSE}
 }
 \details{
 On each iteration \code{i} (up to \code{max_iter}):
@@ -66,7 +68,8 @@ result <- refine_items_by_stability(data = my_data,
                                     iter = 500,
                                     seed_start = 2025,
                                     ncores = 4,
-                                    max_iter = 5)
+                                    max_iter = 5,
+                                    plot.itemStability = FALSE)
 
 # View removed items and final stability
 print(result$removed_items)

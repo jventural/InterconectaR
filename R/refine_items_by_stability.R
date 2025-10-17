@@ -8,7 +8,8 @@ refine_items_by_stability <- function(
     seed_start   = 2025,
     type         = "resampling",
     ncores       = 11,
-    max_iter     = 10
+    max_iter     = 10,
+    plot.itemStability = FALSE
 ) {
   require(EGAnet)
   require(tidyverse)
@@ -34,7 +35,8 @@ refine_items_by_stability <- function(
       iter      = iter,
       seed      = seed,
       type      = type,
-      ncores    = ncores
+      ncores    = ncores,
+      plot.itemStability = plot.itemStability
     )
 
     # --- 2) Forzar comunidades numéricas (solución a cambio en EGAnet >= 2.0.5) ---
