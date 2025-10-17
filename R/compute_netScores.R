@@ -1,150 +1,170 @@
-compute_netScores <- function(scales = c("EDS", "BSFL", "WHO"),
-                                   data = df_completo,
-                                   min_loading = 0.20,
-                                   rename_dims = FALSE,
-                                   custom_names = NULL) {
+compute_netScores <- function(item_prefixes,
+                                     data,
+                                     rename_dims = TRUE,
+                                     custom_names = NULL,
+                                     add_sums = TRUE,
+                                     # Parámetros para análisis de estabilidad
+                                     stability_threshold = 0.70,
+                                     stability_corr = "spearman",
+                                     stability_model = "glasso",
+                                     stability_algorithm = "louvain",
+                                     stability_iter = 1000,
+                                     stability_seed_start = 2025,
+                                     stability_type = "resampling",
+                                     stability_ncores = 11,
+                                     stability_max_iter = 10,
+                                     stability_plot = TRUE,
+                                     # Parámetros para EGA
+                                     ega_plot = TRUE) {
 
-  # Bibliotecas necesarias
   require(tidyverse)
-  require(psych)
-  require(qgraph)
+  require(EGAnet)
+  require(InterconectaR)
 
-  # Detectar automáticamente las columnas de las escalas especificadas
+  cat("\n=== COMPUTE NETWORK SCORES CON ANÁLISIS DE ESTABILIDAD ===\n\n")
+
+  # Validar entrada
+  if (!is.character(item_prefixes) || length(item_prefixes) == 0) {
+    stop("item_prefixes debe ser un vector de caracteres con los prefijos de items (e.g., c('BP', 'SC', 'EC'))")
+  }
+
+  all_dimensions <- list()
+  all_net_scores <- list()
   scale_columns <- list()
-  other_columns <- names(data)
+  ega_objects <- list()
+  stability_results <- list()
+  removed_items_by_scale <- list()
 
-  for (scale in scales) {
-    # Encontrar columnas que comienzan con el nombre de la escala
-    scale_cols <- grep(paste0("^", scale), names(data), value = TRUE)
-    if (length(scale_cols) > 0) {
-      scale_columns[[scale]] <- scale_cols
-      # Remover estas columnas de other_columns
-      other_columns <- setdiff(other_columns, scale_cols)
-    } else {
-      warning(paste("No se encontraron columnas para la escala:", scale))
+  # Procesar cada escala
+  for (prefix in item_prefixes) {
+
+    cat("\n===============================================\n")
+    cat("PROCESANDO ESCALA:", prefix, "\n")
+    cat("===============================================\n\n")
+
+    # Extraer datos con el prefijo
+    scale_data_original <- data %>% select(starts_with(prefix))
+
+    if (ncol(scale_data_original) == 0) {
+      warning(paste0("No se encontraron items con el prefijo '", prefix, "'. Saltando..."))
+      next
     }
-  }
 
-  # Verificar que se encontraron columnas para procesar
-  if (length(scale_columns) == 0) {
-    stop("No se encontraron columnas para ninguna de las escalas especificadas")
-  }
+    cat("Items originales (", ncol(scale_data_original), "):", paste(names(scale_data_original), collapse = ", "), "\n\n")
 
-  cat("\n=== COLUMNAS DETECTADAS ===\n")
-  cat("Escalas a procesar:\n")
-  for (scale in names(scale_columns)) {
-    cat("  ", scale, ": ", length(scale_columns[[scale]]), " columnas\n", sep = "")
-  }
-  cat("\nOtras variables en el dataset: ", length(other_columns), "\n", sep = "")
-  cat("Total de variables: ", ncol(data), "\n\n", sep = "")
+    # ============================================================
+    # PASO 1: ANÁLISIS DE ESTABILIDAD
+    # ============================================================
+    cat("--- PASO 1: ANÁLISIS DE ESTABILIDAD ---\n")
 
-  # Función interna para realizar EFA para una escala
-  perform_efa <- function(scale_name, data, min_loading) {
-    scale_items <- data %>%
-      select(starts_with(scale_name)) %>%
-      select(-contains("Total"))
+    tryCatch({
+      model_refinado <- refine_items_by_stability(
+        data = scale_data_original,
+        threshold = stability_threshold,
+        corr = stability_corr,
+        model = stability_model,
+        algorithm = stability_algorithm,
+        iter = stability_iter,
+        seed_start = stability_seed_start,
+        type = stability_type,
+        ncores = stability_ncores,
+        max_iter = stability_max_iter,
+        plot.itemStability = stability_plot
+      )
 
-    # Determinar número de factores
-    n_factors <- case_when(
-      scale_name == "EDS" ~ 3,
-      scale_name == "BSFL" ~ 1,
-      scale_name == "WHO" ~ 1,
-      TRUE ~ 1
+      # Guardar resultados de estabilidad
+      stability_results[[prefix]] <- model_refinado
+
+      # Obtener items removidos
+      items_removidos <- unique(c(model_refinado$removed_items))
+      removed_items_by_scale[[prefix]] <- items_removidos
+
+      if (length(items_removidos) > 0) {
+        cat("\nItems REMOVIDOS por inestabilidad (", length(items_removidos), "):\n")
+        cat("  ", paste(items_removidos, collapse = ", "), "\n\n")
+      } else {
+        cat("\nNo se removieron items (todos son estables).\n\n")
+      }
+
+      # Datos refinados (sin items inestables)
+      scale_data_refinada <- scale_data_original %>%
+        select(-any_of(items_removidos))
+
+      cat("Items FINALES después de refinamiento (", ncol(scale_data_refinada), "):",
+          paste(names(scale_data_refinada), collapse = ", "), "\n\n")
+
+    }, error = function(e) {
+      cat("\nERROR en análisis de estabilidad:", conditionMessage(e), "\n")
+      cat("Usando datos originales sin refinamiento.\n\n")
+      scale_data_refinada <<- scale_data_original
+      removed_items_by_scale[[prefix]] <<- character(0)
+    })
+
+    # ============================================================
+    # PASO 2: ESTIMACIÓN DE EGA
+    # ============================================================
+    cat("--- PASO 2: ESTIMACIÓN DE EGA ---\n")
+
+    ega_obj <- EGA(
+      data = scale_data_refinada,
+      plot.EGA = ega_plot
     )
 
-    # Realizar análisis factorial
-    efa_result <- fa(scale_items,
-                     nfactors = n_factors,
-                     rotate = "oblimin",
-                     fm = "ml")
+    ega_objects[[prefix]] <- ega_obj
 
-    # Extraer dimensiones
-    if (n_factors == 1) {
-      loadings_matrix <- as.matrix(efa_result$loadings[, 1, drop = FALSE])
-      colnames(loadings_matrix) <- paste0(scale_name, "_Dim1")
-    } else {
-      loadings_matrix <- efa_result$loadings[, 1:n_factors]
-      colnames(loadings_matrix) <- paste0(scale_name, "_Dim", 1:n_factors)
+    # Obtener membresía de ítems (comunidades)
+    memberships <- ega_obj$wc
+    n_dims <- max(memberships)
+
+    cat("Dimensiones identificadas:", n_dims, "\n\n")
+
+    # Obtener nombres de ítems finales
+    item_names <- names(memberships)
+    scale_columns[[prefix]] <- item_names
+
+    # Organizar ítems por dimensión
+    scale_dims <- list()
+    for (dim_num in 1:n_dims) {
+      dim_name <- paste0(prefix, "_Dim", dim_num)
+      items_in_dim <- item_names[memberships == dim_num]
+      scale_dims[[dim_name]] <- items_in_dim
     }
 
-    # Filtrar por min_loading y crear estructura de dimensiones
-    dimensions <- list()
-    item_loadings <- data.frame()
+    all_dimensions[[prefix]] <- scale_dims
 
-    for (i in 1:ncol(loadings_matrix)) {
-      dim_name <- colnames(loadings_matrix)[i]
-      items_in_dim <- names(which(abs(loadings_matrix[, i]) >= min_loading))
+    # ============================================================
+    # PASO 3: CALCULAR NETWORK SCORES
+    # ============================================================
+    cat("--- PASO 3: CALCULANDO NETWORK SCORES ---\n")
 
-      # Ordenar por carga factorial descendente
-      loadings_values <- abs(loadings_matrix[items_in_dim, i])
-      items_in_dim <- items_in_dim[order(loadings_values, decreasing = TRUE)]
+    # Calcular net.scores
+    net_scores_result <- net.scores(data = scale_data_refinada, A = ega_obj)
 
-      dimensions[[dim_name]] <- items_in_dim
+    # Extraer scores estandarizados
+    std_scores_matrix <- net_scores_result$scores$std.scores
 
-      # Agregar a item_loadings
-      temp_loadings <- data.frame(
-        item = items_in_dim,
-        loading = loadings_matrix[items_in_dim, i],
-        dimension = dim_name,
-        stringsAsFactors = FALSE
-      )
-      item_loadings <- rbind(item_loadings, temp_loadings)
-    }
+    # Convertir a data frame y nombrar columnas
+    net_scores_df <- as.data.frame(std_scores_matrix)
+    colnames(net_scores_df) <- names(scale_dims)
 
-    # Calcular network scores para cada participante
-    net_scores <- matrix(NA, nrow = nrow(data), ncol = length(dimensions))
-    colnames(net_scores) <- names(dimensions)
+    all_net_scores[[prefix]] <- net_scores_df
 
-    for (i in 1:length(dimensions)) {
-      items <- dimensions[[i]]
-      if (length(items) > 0) {
-        subnet_data <- scale_items[, items]
-
-        # Calcular correlación entre ítems
-        cor_matrix <- cor(subnet_data, use = "pairwise.complete.obs")
-
-        # Crear network
-        network <- qgraph(cor_matrix,
-                          graph = "glasso",
-                          sampleSize = nrow(subnet_data),
-                          threshold = TRUE,
-                          layout = "spring",
-                          DoNotPlot = TRUE)
-
-        # Obtener centralidad de cada ítem
-        centrality_scores <- centrality(network, alpha = 1, posfun = identity)$InDegree
-
-        # Calcular score ponderado para cada participante
-        weights <- centrality_scores / sum(centrality_scores)
-        weighted_scores <- as.matrix(subnet_data) %*% weights
-
-        # Estandarizar los scores
-        net_scores[, i] <- scale(weighted_scores)[, 1]
-      }
-    }
-
-    return(list(
-      dimensions = dimensions,
-      net_scores = net_scores,
-      item_loadings = item_loadings
-    ))
+    cat("Network scores calculados exitosamente.\n")
   }
 
-  # Función para obtener nombres personalizados interactivamente
-  get_custom_names <- function(all_dimensions) {
-    cat("\n=== DIMENSIONES IDENTIFICADAS ===\n")
-
-    # Mostrar todas las dimensiones
-    for (scale in names(all_dimensions)) {
-      cat("\n", scale, ":\n", sep = "")
-      for (dim_name in names(all_dimensions[[scale]])) {
-        items <- all_dimensions[[scale]][[dim_name]]
-        n_items <- length(items)
-        items_str <- paste(items, collapse = ", ")
-        cat("  ", dim_name, " (", n_items, " ítems): ", items_str, "\n", sep = "")
-      }
+  cat("\n\n=== RESUMEN: DIMENSIONES IDENTIFICADAS ===\n")
+  for (scale in names(all_dimensions)) {
+    cat("\n", scale, ":\n", sep = "")
+    for (dim_name in names(all_dimensions[[scale]])) {
+      items <- all_dimensions[[scale]][[dim_name]]
+      n_items <- length(items)
+      items_str <- paste(items, collapse = ", ")
+      cat("  ", dim_name, " (", n_items, " ítems): ", items_str, "\n", sep = "")
     }
+  }
 
+  # Decidir si renombrar
+  if (is.null(custom_names) && rename_dims) {
     cat("\n=== RENOMBRAR DIMENSIONES ===\n")
     cat("Proporciona un nombre descriptivo para cada dimensión:\n")
     cat("(Presiona Enter para mantener el nombre por defecto)\n")
@@ -159,77 +179,22 @@ compute_netScores <- function(scales = c("EDS", "BSFL", "WHO"),
         new_name <- readline(prompt = paste0("Nuevo nombre para ", dim_name, ": "))
 
         if (new_name == "") {
-          # Si no se proporciona nombre, usar formato NetScore
+          # Mantener nombre por defecto (NetScore)
           num <- gsub(paste0(scale, "_Dim"), "", dim_name)
           custom_names[[dim_name]] <- paste0(scale, "_NetScore_", num)
         } else {
-          # Limpiar el nombre ingresado (remover espacios al inicio/final)
           new_name <- trimws(new_name)
-
-          # NO agregar el prefijo de la escala, solo usar lo que escribió el usuario
-
-          # Agregar automáticamente _score al final si no lo tiene
+          # Agregar _score si no lo tiene
           if (!grepl("_score$", new_name)) {
             new_name <- paste0(new_name, "_score")
           }
-
           custom_names[[dim_name]] <- new_name
-
-          # Mostrar el nombre final al usuario
-          cat("  → Nombre asignado: ", new_name, "\n", sep = "")
+          cat("  → Nombre asignado:", new_name, "\n")
         }
       }
     }
-
-    return(custom_names)
-  }
-
-  # Procesar cada escala
-  all_results <- list()
-  all_net_scores <- list()
-  all_dimensions <- list()
-  all_item_loadings <- list()
-
-  # Actualizar scales para usar solo las que tienen columnas
-  scales_to_process <- names(scale_columns)
-
-  for (scale in scales_to_process) {
-    cat("Procesando escala:", scale, "\n")
-    result <- perform_efa(scale, data, min_loading)
-    all_results[[scale]] <- result
-    all_net_scores[[scale]] <- result$net_scores
-    all_dimensions[[scale]] <- result$dimensions
-    all_item_loadings[[scale]] <- result$item_loadings
-  }
-
-  # Obtener nombres personalizados si se solicita
-  if (rename_dims) {
-    if (is.null(custom_names)) {
-      # Modo interactivo - MOSTRAR DIMENSIONES Y SOLICITAR NOMBRES
-      custom_names <- get_custom_names(all_dimensions)
-    } else {
-      # Asegurar que los nombres custom también tengan _score al final
-      for (name in names(custom_names)) {
-        if (!grepl("_score$", custom_names[[name]]) && !grepl("NetScore", custom_names[[name]])) {
-          custom_names[[name]] <- paste0(custom_names[[name]], "_score")
-        }
-      }
-
-      # Mostrar las dimensiones identificadas
-      cat("\n=== DIMENSIONES IDENTIFICADAS ===\n")
-      for (scale in names(all_dimensions)) {
-        cat("\n", scale, ":\n", sep = "")
-        for (dim_name in names(all_dimensions[[scale]])) {
-          items <- all_dimensions[[scale]][[dim_name]]
-          n_items <- length(items)
-          items_str <- paste(items, collapse = ", ")
-          cat("  ", dim_name, " (", n_items, " ítems): ", items_str, "\n", sep = "")
-        }
-      }
-      cat("\nUsando nombres personalizados proporcionados.\n")
-    }
-  } else {
-    # Usar nombres por defecto (NetScore)
+  } else if (!rename_dims || is.null(custom_names)) {
+    # Usar nombres por defecto
     custom_names <- list()
     for (scale in names(all_dimensions)) {
       for (dim_name in names(all_dimensions[[scale]])) {
@@ -237,115 +202,84 @@ compute_netScores <- function(scales = c("EDS", "BSFL", "WHO"),
         custom_names[[dim_name]] <- paste0(scale, "_NetScore_", num)
       }
     }
+    cat("\nUsando nombres por defecto.\n")
   }
 
-  # Combinar network scores y renombrar columnas
-  net_scores_df <- do.call(cbind, all_net_scores)
+  # Combinar network scores
+  net_scores_combined <- bind_cols(all_net_scores)
 
   # Aplicar nombres personalizados
   new_col_names <- character()
-  for (col_name in colnames(net_scores_df)) {
+  for (col_name in colnames(net_scores_combined)) {
     if (col_name %in% names(custom_names)) {
       new_col_names <- c(new_col_names, custom_names[[col_name]])
     } else {
       new_col_names <- c(new_col_names, col_name)
     }
   }
-  colnames(net_scores_df) <- new_col_names
-  net_scores_df <- as_tibble(net_scores_df)
+  colnames(net_scores_combined) <- new_col_names
 
-  # CALCULAR SUMATORIAS DE ÍTEMS POR DIMENSIÓN
-  dimension_sums_df <- data.frame(row.names = 1:nrow(data))
+  # Calcular sumatorias si se solicita
+  dimension_sums <- NULL
+  if (add_sums) {
+    cat("\n=== CALCULANDO SUMATORIAS ===\n")
+    dimension_sums_df <- data.frame(row.names = 1:nrow(data))
 
-  for (scale in names(all_dimensions)) {
-    for (dim_name in names(all_dimensions[[scale]])) {
-      items <- all_dimensions[[scale]][[dim_name]]
+    for (scale in names(all_dimensions)) {
+      for (dim_name in names(all_dimensions[[scale]])) {
+        items <- all_dimensions[[scale]][[dim_name]]
 
-      if (length(items) > 0) {
-        # Obtener nombre personalizado si existe
-        if (dim_name %in% names(custom_names)) {
-          sum_col_name <- custom_names[[dim_name]]
-          # Remover "_score" del nombre para la columna de suma
-          sum_col_name <- gsub("_score$", "", sum_col_name)
-        } else {
-          # Usar nombre por defecto
-          sum_col_name <- paste0(scale, "_Sum_", gsub(paste0(scale, "_Dim"), "", dim_name))
+        if (length(items) > 0) {
+          # Obtener nombre personalizado
+          if (dim_name %in% names(custom_names)) {
+            sum_col_name <- gsub("_score$", "_sum", custom_names[[dim_name]])
+            if (!grepl("_sum$", sum_col_name)) {
+              sum_col_name <- paste0(sum_col_name, "_sum")
+            }
+          } else {
+            sum_col_name <- paste0(scale, "_Sum_", gsub(paste0(scale, "_Dim"), "", dim_name))
+          }
+
+          dimension_sums_df[[sum_col_name]] <- rowSums(data[, items, drop = FALSE], na.rm = TRUE)
         }
-
-        # Calcular suma de los ítems de esta dimensión
-        dimension_sums_df[[sum_col_name]] <- rowSums(data[, items], na.rm = TRUE)
       }
     }
+
+    dimension_sums <- as_tibble(dimension_sums_df)
   }
 
-  dimension_sums_df <- as_tibble(dimension_sums_df)
-
-  # CREAR DATASET COMPLETO CON SCORES Y SUMAS
-  df_complete_with_scores <- bind_cols(data, net_scores_df, dimension_sums_df)
-
-  # Crear resumen de dimensiones con nombres personalizados
-  dimension_summary <- character()
-  for (scale in names(all_dimensions)) {
-    dimension_summary <- c(dimension_summary, paste0("\n", scale, ":"))
-    for (dim_name in names(all_dimensions[[scale]])) {
-      items <- all_dimensions[[scale]][[dim_name]]
-      n_items <- length(items)
-      items_str <- paste(items, collapse = ", ")
-
-      # Usar nombre personalizado en el resumen
-      display_name <- ifelse(dim_name %in% names(custom_names),
-                             custom_names[[dim_name]],
-                             dim_name)
-
-      dimension_summary <- c(dimension_summary,
-                             paste0("  ", display_name, " (", n_items, "): ", items_str))
-    }
+  # Dataset completo
+  if (!is.null(dimension_sums)) {
+    df_complete <- bind_cols(data, net_scores_combined, dimension_sums)
+  } else {
+    df_complete <- bind_cols(data, net_scores_combined)
   }
-  dimension_summary <- paste(dimension_summary, collapse = "\n")
 
-  # Combinar item loadings
-  item_loadings_df <- do.call(rbind, all_item_loadings) %>%
-    as_tibble() %>%
-    mutate(loading = round(as.numeric(loading), 3)) %>%
-    arrange(dimension, desc(abs(loading))) %>%
-    select(item, loading)
+  cat("\n=== RESUMEN FINAL ===\n")
+  cat("Total de escalas procesadas:", length(all_dimensions), "\n")
+  cat("Total de dimensiones:", ncol(net_scores_combined), "\n")
+  cat("Network scores:", paste(names(net_scores_combined), collapse = ", "), "\n")
 
-  # Crear resumen de la data final
-  data_summary <- paste0(
-    "\n=== RESUMEN DEL DATASET FINAL ===\n",
-    "Filas: ", nrow(df_complete_with_scores), "\n",
-    "Columnas totales: ", ncol(df_complete_with_scores), "\n",
-    "  - Variables originales: ", ncol(data), "\n",
-    "  - Network scores agregados: ", ncol(net_scores_df), "\n",
-    "  - Sumatorias de dimensiones: ", ncol(dimension_sums_df), "\n",
-    "  - Variables de escalas procesadas: ", sum(sapply(scale_columns, length)), "\n",
-    "  - Otras variables: ", length(other_columns), "\n"
-  )
+  if (add_sums) {
+    cat("Sumatorias:", ncol(dimension_sums), "\n")
+  }
 
-  # Retornar resultados
+  cat("Dataset final:", ncol(df_complete), "columnas\n\n")
+
+  # Retornar resultado
   resultado <- list(
-    # Dataset completo con scores y sumas
-    data_complete = df_complete_with_scores,
-
-    # Solo los network scores
-    net_scores = net_scores_df,
-
-    # Solo las sumatorias
-    dimension_sums = dimension_sums_df,
-
-    # Resúmenes y detalles
-    dimension_summary = dimension_summary,
-    item_loadings = item_loadings_df,
+    data_complete = df_complete,
+    net_scores = as_tibble(net_scores_combined),
+    dimension_sums = dimension_sums,
     dimensions_list = all_dimensions,
     dimension_names = custom_names,
-
-    # Información adicional
+    ega_objects = ega_objects,
     scale_columns = scale_columns,
-    other_columns = other_columns,
-    data_summary = data_summary
+    stability_results = stability_results,
+    removed_items = removed_items_by_scale
   )
 
-  class(resultado) <- c("scale_network_analysis", "list")
+  class(resultado) <- c("ega_network_scores", "list")
 
   return(resultado)
 }

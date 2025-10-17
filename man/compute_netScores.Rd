@@ -1,70 +1,112 @@
 \name{compute_netScores}
 \alias{compute_netScores}
-\title{Compute Network-Based Factor Scores for Multiple Psychological Scales}
+\title{Compute Network-Based Scores with Item Stability Refinement and Exploratory Graph Analysis (EGA)}
 \description{
-The \code{compute_netScores} function automates the extraction of latent dimensions from multiple psychological scales using Exploratory Factor Analysis (EFA) combined with network centrality weighting.
-It estimates dimension-level scores based on the relative importance (centrality) of each item in a partial correlation network (\pkg{qgraph}), producing both network-based scores and traditional item-sum scores for each identified dimension.
+The \code{compute_netScores} function automates a multistage pipeline to extract, refine, and score latent dimensions from multiple psychological scales.
+It integrates item-level stability analysis (via bootstrapped Exploratory Graph Analysis, \pkg{EGAnet}) with network-based factor score computation (\code{net.scores}), producing both standardized network scores and traditional sum scores.
+This approach ensures that only stable items contribute to the latent dimensions, enhancing replicability and interpretability across scales.
 }
 \usage{
 compute_netScores(
-  scales = c("EDS", "BSFL", "WHO"),
-  data = df_completo,
-  min_loading = 0.20,
-  rename_dims = FALSE,
-  custom_names = NULL
+  item_prefixes,
+  data,
+  rename_dims = TRUE,
+  custom_names = NULL,
+  add_sums = TRUE,
+  # Stability analysis parameters
+  stability_threshold = 0.70,
+  stability_corr = "spearman",
+  stability_model = "glasso",
+  stability_algorithm = "louvain",
+  stability_iter = 1000,
+  stability_seed_start = 2025,
+  stability_type = "resampling",
+  stability_ncores = 11,
+  stability_max_iter = 10,
+  stability_plot = TRUE,
+  # EGA parameters
+  ega_plot = TRUE
 )
 }
 \arguments{
-\item{\code{scales}}{Character vector. Scale prefixes to analyze (e.g., \code{c("EDS", "BSFL", "WHO")}). The function automatically detects all items in \code{data} whose names begin with these prefixes.}
-\item{\code{data}}{A \code{data.frame} or \code{tibble} containing item-level responses. Columns must be named following scale prefixes (e.g., \code{EDS1}, \code{EDS2}, ...).}
-\item{\code{min_loading}}{Numeric. Minimum absolute factor loading for an item to be retained within a dimension. Default is \code{0.20}.}
-\item{\code{rename_dims}}{Logical. If \code{TRUE}, allows interactive or predefined renaming of extracted dimensions. Default is \code{FALSE}.}
-\item{\code{custom_names}}{Optional list. Custom names to assign to each dimension (e.g., \code{list("EDS_Dim1" = "Emotional_Dysregulation_score")}). Automatically adds suffix \code{_score} if not present.}
+\item{\code{item_prefixes}}{Character vector with prefixes identifying each psychological scale (e.g., \code{c("BP", "SC", "EC")}). The function automatically detects items in \code{data} whose names begin with these prefixes.}
+
+\item{\code{data}}{A \code{data.frame} or \code{tibble} containing item-level responses. Column names must follow the prefix convention (e.g., \code{BP1}, \code{BP2}, \code{BP3}, ...).}
+
+\item{\code{rename_dims}}{Logical. If \code{TRUE}, allows renaming dimensions interactively or via predefined names in \code{custom_names}. Default is \code{TRUE}.}
+
+\item{\code{custom_names}}{Optional list of user-defined names for dimensions. Automatically appends the suffix \code{_score} if not present.}
+
+\item{\code{add_sums}}{Logical. If \code{TRUE}, adds traditional item-sum scores per dimension in addition to network-based scores. Default is \code{TRUE}.}
+
+\item{\code{stability_threshold}}{Numeric. Minimum proportion of stability (default = \code{0.70}) required for an item to be retained during iterative resampling.}
+
+\item{\code{stability_corr}}{Correlation method for the stability analysis. Options include \code{"spearman"} (default), \code{"pearson"}, or \code{"auto"}.}
+
+\item{\code{stability_model}}{Network estimation model used in bootstrapped EGA (default = \code{"glasso"}).}
+
+\item{\code{stability_algorithm}}{Community detection algorithm used in EGA (default = \code{"louvain"}).}
+
+\item{\code{stability_iter}}{Integer. Number of bootstrap iterations (default = \code{1000}).}
+
+\item{\code{stability_seed_start}}{Integer. Starting seed value for reproducibility across iterations (default = \code{2025}).}
+
+\item{\code{stability_type}}{Type of resampling for the bootstrapped EGA. Options: \code{"resampling"} (default) or \code{"parametric"}.}
+
+\item{\code{stability_ncores}}{Integer. Number of CPU cores used for parallel processing during bootstrapping (default = \code{11}).}
+
+\item{\code{stability_max_iter}}{Maximum number of refinement iterations to achieve item stability (default = \code{10}).}
+
+\item{\code{stability_plot}}{Logical. If \code{TRUE}, displays item stability plots for each iteration. Default is \code{TRUE}.}
+
+\item{\code{ega_plot}}{Logical. If \code{TRUE}, displays the EGA network plot for each refined scale. Default is \code{TRUE}.}
 }
 \details{
+The function performs the following steps for each psychological scale:
+
 \enumerate{
-\item Automatically detects items for each specified scale based on name prefixes.
-\item Performs an Exploratory Factor Analysis (\code{fa()}) using maximum likelihood estimation (\code{fm = "ml"}) and oblimin rotation.
-\item Retains items with absolute loadings greater than or equal to \code{min_loading} within each factor.
-\item Constructs a partial correlation network for items in each dimension using \pkg{qgraph} with graphical LASSO regularization.
-\item Computes item centrality (\code{InDegree}) within each network, and derives participant-level scores weighted by these centralities (network scores).
-\item Standardizes network scores across participants (\code{scale()}), and calculates corresponding item-sum scores for comparison.
-\item Optionally renames dimensions interactively or from user-supplied names.
-\item Returns a combined dataset with original variables, network-based scores, and dimension sum scores.
+\item \strong{Item Extraction:} Automatically selects variables in \code{data} whose names start with the given prefix.
+\item \strong{Item Stability Analysis:} Iteratively refines the item set using \code{refine_items_by_stability()}, which bootstraps EGA structures and removes items with dimension membership instability below \code{stability_threshold}.
+\item \strong{Exploratory Graph Analysis (EGA):} Estimates dimensional structure using \pkg{EGAnet} on the refined dataset, identifying item communities (latent dimensions).
+\item \strong{Network Score Computation:} Uses \code{net.scores()} to calculate participant-level standardized scores, weighting each item by its centrality within the network.
+\item \strong{Sum Scores:} Optionally computes unweighted sum scores per dimension for comparison and validation.
+\item \strong{Dimension Naming:} Allows user-defined or automatic naming of dimensions (e.g., \code{BP_Dim1} → \code{BP_NetScore_1}).
+\item \strong{Output Combination:} Returns a unified dataset containing original variables, network-based scores, and optional sum scores, along with all intermediate results (EGA and stability objects).
 }
 }
 \value{
-A list of class \code{"scale_network_analysis"} containing the following elements:
+A list of class \code{"ega_network_scores"} containing:
 \itemize{
-  \item{\code{data_complete}}{Tibble combining original data, network scores, and sum scores.}
-  \item{\code{net_scores}}{Tibble with standardized network-based dimension scores.}
-  \item{\code{dimension_sums}}{Tibble with raw sum scores for each dimension.}
-  \item{\code{dimension_summary}}{Character string summarizing scales, dimensions, and items included.}
-  \item{\code{item_loadings}}{Tibble of item loadings per dimension (sorted by absolute loading).}
+  \item{\code{data_complete}}{Tibble combining original data, network scores, and (optionally) sum scores.}
+  \item{\code{net_scores}}{Tibble of standardized network-based dimension scores per participant.}
+  \item{\code{dimension_sums}}{Tibble of dimension-wise sum scores (if \code{add_sums = TRUE}).}
   \item{\code{dimensions_list}}{Nested list mapping each scale’s dimensions and their corresponding items.}
-  \item{\code{dimension_names}}{List of final dimension names (custom or default).}
-  \item{\code{scale_columns}}{List of detected item columns per scale.}
-  \item{\code{other_columns}}{Character vector of non-scale variables in the dataset.}
-  \item{\code{data_summary}}{Character string summarizing dataset composition and counts.}
+  \item{\code{dimension_names}}{Named list of final dimension labels (user-defined or auto-generated).}
+  \item{\code{ega_objects}}{List of \code{EGA} results per scale.}
+  \item{\code{stability_results}}{List of \code{refine_items_by_stability} outputs per scale, including item removal logs and plots.}
+  \item{\code{removed_items}}{List of items excluded during stability refinement for each scale.}
+  \item{\code{scale_columns}}{Detected item columns per scale prefix.}
 }
 }
 \examples{
 \dontrun{
-# Example with three psychological scales
+# Example with three scales and stability refinement
 res <- compute_netScores(
-  scales = c("EDS", "BSFL", "WHO"),
+  item_prefixes = c("BP", "SC", "EC"),
   data = df_completo,
-  min_loading = 0.25
+  stability_threshold = 0.80,
+  rename_dims = TRUE
 )
 
-# View summary of identified dimensions
-cat(res$dimension_summary)
-
-# Access standardized network scores
+# Inspect network-based scores
 head(res$net_scores)
 
-# Merge complete dataset with scores
-df_with_scores <- res$data_complete
+# Review dimensions and removed items
+res$dimensions_list
+res$removed_items
+
+# Access the full dataset with appended scores
+df_final <- res$data_complete
 }
 }
 \author{
