@@ -19,8 +19,8 @@ centrality_bridge_plot <- function(
   network2 <- networks_groups[[group_names[2]]]
 
   # Calcular la influencia de puente para ambas redes (sin graficar las redes)
-  qgraph_obj1 <- qgraph(network1$graph, DoNotPlot = TRUE)
-  qgraph_obj2 <- qgraph(network2$graph, DoNotPlot = TRUE)
+  qgraph_obj1 <- qgraph(network1$graph, labels = colnames(network1$graph), DoNotPlot = TRUE)
+  qgraph_obj2 <- qgraph(network2$graph, labels = colnames(network2$graph), DoNotPlot = TRUE)
 
   bridge1 <- bridge(qgraph_obj1, communities = groups, useCommunities = "all", normalize = FALSE)
   bridge2 <- bridge(qgraph_obj2, communities = groups, useCommunities = "all", normalize = FALSE)
