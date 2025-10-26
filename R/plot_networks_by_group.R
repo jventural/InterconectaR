@@ -42,7 +42,7 @@ plot_networks_by_group <- function(networks_by_group,
            layout = L,
            palette = "ggplot2",
            groups = groups,
-           labels = if (is.null(labels)) networks_by_group[[i]][["labels"]] else labels,
+           labels = if (!is.null(labels)) labels else colnames(networks_by_group[[i]]$graph),
            pie = pie_values,
            title = paste0("\n", "Group: ", group_name),  # Añadí salto de línea antes del título
            title.cex = 1.6,  # Reduje ligeramente el tamaño
