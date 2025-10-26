@@ -1,13 +1,13 @@
 estimate_networks_by_group <- function(data,
-                                        group_var,
-                                        columns,
-                                        default          = "ggmModSelect",
-                                        stepwise         = TRUE,
-                                        corMethod        = "spearman",
-                                        abbreviate_vars  = FALSE,
-                                        abbr_minlength   = 3,
-                                        labels           = NULL,   # << NUEVO
-                                        set_labels_on_graph = TRUE # << NUEVO
+                                       group_var,
+                                       columns,
+                                       default          = "ggmModSelect",
+                                       stepwise         = TRUE,
+                                       corMethod        = "spearman",
+                                       abbreviate_vars  = FALSE,
+                                       abbr_minlength   = 3,
+                                       labels           = NULL,   # << NUEVO
+                                       set_labels_on_graph = TRUE # << NUEVO
 ) {
   # Instalar/cargar paquetes necesarios
   if (!requireNamespace("dplyr", quietly = TRUE))     install.packages("dplyr")
