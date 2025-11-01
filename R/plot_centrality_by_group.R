@@ -4,10 +4,13 @@ plot_centrality_by_group <- function(networks_groups, replacements, measure_spec
   library(ggplot2)
   library(forcats)
 
-  # Generar la tabla de centralidad y ajustarla
-  cents <- centralityTable(networks_groups[[1]]$graph, networks_groups[[2]]$graph) %>%
+  # 1) Calcular tabla de centralidad
+  cents_raw <- centralityTable(networks_groups[[1]]$graph,
+                               networks_groups[[2]]$graph)
+
+  cents <- cents_raw %>%
     rename(group = graph) %>%
-    mutate(group = case_when(
+    mutate(group = dplyr::case_when(
       group == "graph 1" ~ replacements[1],
       group == "graph 2" ~ replacements[2],
       TRUE ~ group
@@ -15,21 +18,38 @@ plot_centrality_by_group <- function(networks_groups, replacements, measure_spec
     select(-type) %>%
     filter(measure == measure_spec)
 
-  # Crear el gráfico utilizando ggplot
+  if (nrow(cents) == 0) {
+    stop(
+      paste0("No hay filas para measure = '", measure_spec,
+             "'. Medidas disponibles: ",
+             paste(unique(cents_raw$measure), collapse = ", "))
+    )
+  }
+
+  # Orden de nodos según media (como en el plot)
+  node_order <- cents %>%
+    group_by(node) %>%
+    summarise(mean_value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+    arrange(mean_value) %>%
+    pull(node)
+
+  cents <- cents %>%
+    mutate(node = factor(node, levels = node_order))
+
+  # 2) Gráfico
   Figure2 <- ggplot(
     data = cents,
     aes(
-      x = forcats::fct_reorder(factor(node), value, mean),
+      x = node,
       y = value,
       group = group,
       color = group
     )
   ) +
-    geom_line(aes(linetype = group, color = group)) +
-    geom_point(aes(shape = group, color = group), size = 3) +
-    scale_shape_manual(values = c(8, 13)) +  # Personaliza las formas de los puntos
+    geom_line(aes(linetype = group)) +
+    geom_point(aes(shape = group), size = 3) +
+    scale_shape_manual(values = c(8, 13)) +
     scale_color_manual(values = color_palette) +
-    scale_fill_manual(values = color_palette) +
     xlab("Nodes") +
     ylab("z-score") +
     theme_bw() +
@@ -37,17 +57,24 @@ plot_centrality_by_group <- function(networks_groups, replacements, measure_spec
     labs(
       title = paste(unique(cents$measure)),
       linetype = "Group",
-      shape = "Group",
-      color = "Group"
+      shape   = "Group",
+      color   = "Group"
     ) +
     theme(
-      axis.text.y = element_text(size = 12),
-      axis.text.x = element_text(size = 12),
-      legend.text = element_text(size = 10),
-      legend.title = element_text(size = 12),
+      axis.text.y    = element_text(size = 12),
+      axis.text.x    = element_text(size = 12),
+      legend.text    = element_text(size = 10),
+      legend.title   = element_text(size = 12),
       panel.grid.minor = element_blank()
     )
 
-  # Retornar el gráfico creado
-  return(Figure2)
+  # 3) Salida como lista
+  out_table <- cents %>%
+    arrange(node, group) %>%
+    mutate(node = as.character(node))
+
+  return(list(
+    plot  = Figure2,
+    table = out_table
+  ))
 }
