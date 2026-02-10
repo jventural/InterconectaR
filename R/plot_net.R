@@ -66,9 +66,8 @@ plot_net <- function(
     short_labels = NULL,
     full_labels  = NULL,
     groups_list = NULL,
-    group_cols = c("Burnout parental"="#F1948A",
-                   "Estilos de comunicaci\u00f3n"="#3498DB",
-                   "Satisfacci\u00f3n conyugal"="#2ECC71"),
+    group_cols = NULL,
+    palette = "Darjeeling1",
     node_radius = 0.20,
     node_label_size = NULL,
     ring_offset = 0.045,
@@ -100,6 +99,15 @@ plot_net <- function(
 ){
 
   if (is.null(labels)) labels <- colnames(mat)
+
+  # --- Auto-generar group_cols desde wesanderson si no se provee ------------
+  if (is.null(group_cols) && !is.null(groups_list)) {
+    n <- length(groups_list)
+    pal <- wesanderson::wes_palette(palette, n, type = "continuous")
+    group_cols <- stats::setNames(pal, names(groups_list))
+  } else if (is.null(group_cols)) {
+    group_cols <- c(Nodos = "#95A5A6")
+  }
 
   # --- Abreviaturas + leyenda de nombres ------------------------------------
   display_labels <- if (!is.null(short_labels)) short_labels else labels

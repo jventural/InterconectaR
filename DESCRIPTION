@@ -51,7 +51,8 @@ Imports:
     tibble,
     tidyr,
     tidyselect,
-    viridis
+    viridis,
+    wesanderson
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 NeedsCompilation: no
