@@ -101,22 +101,28 @@ plot_net_group <- function(
   stopifnot(all(dim(mat1) == dim(mat2)))
   if (is.null(labels)) labels <- colnames(mat1)
 
-  # --- Auto-generar group_cols desde wesanderson si no se provee ------------
-  if (is.null(group_cols) && !is.null(groups_list)) {
-    n <- length(groups_list)
-    pal <- wesanderson::wes_palette(palette, n, type = "continuous")
-    group_cols <- stats::setNames(pal, names(groups_list))
-  } else if (is.null(group_cols)) {
-    group_cols <- c(Nodos = "#95A5A6")
-  }
+  # --- Auto-generar colores de nodos y aristas desde la paleta ---------------
+  needs_node_cols <- is.null(group_cols)
+  needs_edge_cols <- is.null(edge_color_pos) || is.null(edge_color_neg)
 
-  # --- Auto-derivar colores de aristas desde la paleta ----------------------
-  if (is.null(edge_color_pos) || is.null(edge_color_neg)) {
-    pal5 <- wesanderson::wes_palette(palette, 5, type = "continuous")
-    pal_rgb <- grDevices::col2rgb(pal5)
-    warmth <- pal_rgb["red", ] - pal_rgb["blue", ]
-    if (is.null(edge_color_pos)) edge_color_pos <- pal5[which.min(warmth)]
-    if (is.null(edge_color_neg)) edge_color_neg <- pal5[which.max(warmth)]
+  if (needs_node_cols || needs_edge_cols) {
+    n_groups <- if (!is.null(groups_list)) length(groups_list) else 1
+    n_total  <- n_groups + 2
+    all_cols <- wesanderson::wes_palette(palette, n_total, type = "continuous")
+    all_rgb  <- grDevices::col2rgb(all_cols)
+    warmth   <- all_rgb["red", ] - all_rgb["blue", ]
+    ord      <- order(warmth)  # indice de mas frio a mas calido
+
+    if (needs_edge_cols) {
+      if (is.null(edge_color_pos)) edge_color_pos <- all_cols[ord[1]]
+      if (is.null(edge_color_neg)) edge_color_neg <- all_cols[ord[n_total]]
+    }
+    if (needs_node_cols && !is.null(groups_list)) {
+      mid_idx    <- ord[2:(n_total - 1)]
+      group_cols <- stats::setNames(all_cols[mid_idx], names(groups_list))
+    } else if (needs_node_cols) {
+      group_cols <- c(Nodos = "#95A5A6")
+    }
   }
 
   # --- Abreviaturas + leyenda de nombres ------------------------------------
