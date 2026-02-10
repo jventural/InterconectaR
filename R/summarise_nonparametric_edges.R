@@ -1,11 +1,17 @@
+#' @title Summarise Nonparametric Edges
+#' @description Summarises nonparametric bootstrap results for network edges from bootnet.
+#' @param nonParametricBoot A bootnet nonparametric bootstrap object.
+#' @param stat_type Character, type of statistic to summarise (default "edge").
+#' @param probs Numeric vector of length 2 for confidence interval quantiles.
+#' @param quiet Logical, suppress printing.
+#' @return A data frame with edge bootstrap summary statistics.
+#' @export
+#' @importFrom dplyr filter select group_by summarise left_join mutate arrange desc n if_else
+#' @importFrom rlang .data
 summarise_nonparametric_edges <- function(nonParametricBoot,
                                           stat_type = "edge",
                                           probs = c(0.025, 0.975),
                                           quiet = TRUE) {
-  # Dependencias
-  if (!requireNamespace("dplyr", quietly = TRUE)) {
-    stop("Se requiere el paquete 'dplyr'.")
-  }
   dplyr <- asNamespace("dplyr")
 
   # Validaciones
@@ -13,7 +19,7 @@ summarise_nonparametric_edges <- function(nonParametricBoot,
     stop("El objeto no parece provenir de bootnet: faltan 'bootTable' y/o 'sampleTable'.")
   }
   if (length(probs) != 2 || any(is.na(probs))) {
-    stop("'probs' debe ser numérico de longitud 2, por ejemplo c(0.025, 0.975).")
+    stop("'probs' debe ser num\u00e9rico de longitud 2, por ejemplo c(0.025, 0.975).")
   }
   probs <- sort(probs)
 

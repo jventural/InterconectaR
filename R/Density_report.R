@@ -1,3 +1,11 @@
+#' Network Density Report
+#'
+#' Calculates and reports network density statistics.
+#'
+#' @param edge.matrix Network edge matrix (e.g., from qgraph).
+#'
+#' @export
+#' @importFrom qgraph getWmat
 Density_report <- function(edge.matrix){
   n <- nrow(edge.matrix)
   Total_Density <- n*(n-1)/2

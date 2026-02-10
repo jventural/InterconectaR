@@ -1,9 +1,35 @@
+#' Compute Network Scores
+#'
+#' Computes network scores with stability analysis using EGA.
+#'
+#' @param item_prefixes Character vector of item prefix patterns.
+#' @param data Data frame with item responses.
+#' @param rename_dims Logical; interactively rename dimensions.
+#' @param custom_names Optional named list of dimension names.
+#' @param add_sums Logical; compute sum scores per dimension.
+#' @param stability_threshold Minimum item stability threshold.
+#' @param stability_corr Correlation method for stability analysis.
+#' @param stability_model Network model for stability analysis.
+#' @param stability_algorithm Community detection algorithm.
+#' @param stability_iter Number of bootstrap iterations.
+#' @param stability_seed_start Starting random seed.
+#' @param stability_type Bootstrap type.
+#' @param stability_ncores Number of CPU cores.
+#' @param stability_max_iter Maximum refinement iterations.
+#' @param stability_plot Logical; plot item stability.
+#' @param ega_plot Logical; plot EGA results.
+#'
+#' @export
+#' @importFrom dplyr %>% select starts_with bind_cols any_of
+#' @importFrom tibble as_tibble
+#' @importFrom EGAnet EGA net.scores
+#' @importFrom rlang sym !! :=
 compute_netScores <- function(item_prefixes,
                                      data,
                                      rename_dims = TRUE,
                                      custom_names = NULL,
                                      add_sums = TRUE,
-                                     # Parámetros para análisis de estabilidad
+                                     # Parametros para analisis de estabilidad
                                      stability_threshold = 0.70,
                                      stability_corr = "spearman",
                                      stability_model = "glasso",
@@ -14,14 +40,10 @@ compute_netScores <- function(item_prefixes,
                                      stability_ncores = 11,
                                      stability_max_iter = 10,
                                      stability_plot = TRUE,
-                                     # Parámetros para EGA
+                                     # Parametros para EGA
                                      ega_plot = TRUE) {
 
-  require(tidyverse)
-  require(EGAnet)
-  require(InterconectaR)
-
-  cat("\n=== COMPUTE NETWORK SCORES CON ANÁLISIS DE ESTABILIDAD ===\n\n")
+  cat("\n=== COMPUTE NETWORK SCORES CON AN\u00c1LISIS DE ESTABILIDAD ===\n\n")
 
   # Validar entrada
   if (!is.character(item_prefixes) || length(item_prefixes) == 0) {
@@ -53,9 +75,9 @@ compute_netScores <- function(item_prefixes,
     cat("Items originales (", ncol(scale_data_original), "):", paste(names(scale_data_original), collapse = ", "), "\n\n")
 
     # ============================================================
-    # PASO 1: ANÁLISIS DE ESTABILIDAD
+    # PASO 1: ANALISIS DE ESTABILIDAD
     # ============================================================
-    cat("--- PASO 1: ANÁLISIS DE ESTABILIDAD ---\n")
+    cat("--- PASO 1: AN\u00c1LISIS DE ESTABILIDAD ---\n")
 
     tryCatch({
       model_refinado <- refine_items_by_stability(
@@ -90,20 +112,20 @@ compute_netScores <- function(item_prefixes,
       scale_data_refinada <- scale_data_original %>%
         select(-any_of(items_removidos))
 
-      cat("Items FINALES después de refinamiento (", ncol(scale_data_refinada), "):",
+      cat("Items FINALES despu\u00e9s de refinamiento (", ncol(scale_data_refinada), "):",
           paste(names(scale_data_refinada), collapse = ", "), "\n\n")
 
     }, error = function(e) {
-      cat("\nERROR en análisis de estabilidad:", conditionMessage(e), "\n")
+      cat("\nERROR en an\u00e1lisis de estabilidad:", conditionMessage(e), "\n")
       cat("Usando datos originales sin refinamiento.\n\n")
       scale_data_refinada <<- scale_data_original
       removed_items_by_scale[[prefix]] <<- character(0)
     })
 
     # ============================================================
-    # PASO 2: ESTIMACIÓN DE EGA
+    # PASO 2: ESTIMACION DE EGA
     # ============================================================
-    cat("--- PASO 2: ESTIMACIÓN DE EGA ---\n")
+    cat("--- PASO 2: ESTIMACI\u00d3N DE EGA ---\n")
 
     ega_obj <- EGA(
       data = scale_data_refinada,
@@ -112,17 +134,17 @@ compute_netScores <- function(item_prefixes,
 
     ega_objects[[prefix]] <- ega_obj
 
-    # Obtener membresía de ítems (comunidades)
+    # Obtener membresia de items (comunidades)
     memberships <- ega_obj$wc
     n_dims <- max(memberships)
 
     cat("Dimensiones identificadas:", n_dims, "\n\n")
 
-    # Obtener nombres de ítems finales
+    # Obtener nombres de items finales
     item_names <- names(memberships)
     scale_columns[[prefix]] <- item_names
 
-    # Organizar ítems por dimensión
+    # Organizar items por dimension
     scale_dims <- list()
     for (dim_num in 1:n_dims) {
       dim_name <- paste0(prefix, "_Dim", dim_num)
@@ -159,23 +181,23 @@ compute_netScores <- function(item_prefixes,
       items <- all_dimensions[[scale]][[dim_name]]
       n_items <- length(items)
       items_str <- paste(items, collapse = ", ")
-      cat("  ", dim_name, " (", n_items, " ítems): ", items_str, "\n", sep = "")
+      cat("  ", dim_name, " (", n_items, " \u00edtems): ", items_str, "\n", sep = "")
     }
   }
 
   # Decidir si renombrar
   if (is.null(custom_names) && rename_dims) {
     cat("\n=== RENOMBRAR DIMENSIONES ===\n")
-    cat("Proporciona un nombre descriptivo para cada dimensión:\n")
+    cat("Proporciona un nombre descriptivo para cada dimensi\u00f3n:\n")
     cat("(Presiona Enter para mantener el nombre por defecto)\n")
-    cat("Nota: Se agregará automáticamente '_score' al final del nombre\n\n")
+    cat("Nota: Se agregar\u00e1 autom\u00e1ticamente '_score' al final del nombre\n\n")
 
     custom_names <- list()
 
     for (scale in names(all_dimensions)) {
       for (dim_name in names(all_dimensions[[scale]])) {
         items <- all_dimensions[[scale]][[dim_name]]
-        cat("\n", dim_name, " (ítems: ", paste(items, collapse = ", "), ")\n", sep = "")
+        cat("\n", dim_name, " (\u00edtems: ", paste(items, collapse = ", "), ")\n", sep = "")
         new_name <- readline(prompt = paste0("Nuevo nombre para ", dim_name, ": "))
 
         if (new_name == "") {
@@ -189,7 +211,7 @@ compute_netScores <- function(item_prefixes,
             new_name <- paste0(new_name, "_score")
           }
           custom_names[[dim_name]] <- new_name
-          cat("  → Nombre asignado:", new_name, "\n")
+          cat("  -> Nombre asignado:", new_name, "\n")
         }
       }
     }

@@ -1,3 +1,9 @@
+#' @title Structure Groups
+#' @description Creates a named list of sequential integer groups.
+#' @param names Character vector of group names.
+#' @param values Integer vector of group sizes.
+#' @return A named list of integer sequences.
+#' @export
 structure_groups <- function(names, values) {
   if(length(names) != length(values)) {
     stop("The length of names and values must be the same.")

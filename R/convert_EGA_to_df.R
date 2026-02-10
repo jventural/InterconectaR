@@ -1,3 +1,10 @@
+#' Convert EGA Result to Data Frame
+#'
+#' Extracts network metrics from a single EGA result object.
+#'
+#' @param ega_result A single EGA result object.
+#'
+#' @export
 convert_EGA_to_df <- function(ega_result) {
   network_matrix <- ega_result$network
   methods <- attr(network_matrix, "methods")

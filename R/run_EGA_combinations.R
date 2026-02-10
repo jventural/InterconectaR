@@ -1,10 +1,19 @@
+#' @title Run EGA Combinations
+#' @description Runs EGA with multiple combinations of correlation methods and algorithms.
+#' @param data Data frame with the data.
+#' @param corr Character vector of correlation methods.
+#' @param algorithm Character vector of community detection algorithms.
+#' @param leiden_args List of additional arguments for the Leiden algorithm.
+#' @return A list of EGA results with class "EGA_combinations".
+#' @export
+#' @importFrom EGAnet EGA
 run_EGA_combinations <- function(data,
                                  corr = c("cor_auto", "pearson", "spearman"),
                                  algorithm = c("leiden", "louvain", "walktrap"),
                                  leiden_args = list(objective_function = "CPM",
                                                     resolution_parameter = 1.0)) {
 
-  # Validar parámetros de entrada
+  # Validar parametros de entrada
   corr <- match.arg(corr, several.ok = TRUE)
   algorithm <- match.arg(algorithm, several.ok = TRUE)
 
@@ -19,7 +28,7 @@ run_EGA_combinations <- function(data,
     current_corr <- combinations$corr[i]
     current_alg <- combinations$algorithm[i]
 
-    # Configurar parámetros específicos para Leiden
+    # Configurar parametros especificos para Leiden
     if(current_alg == "leiden") {
       args <- list(
         data = data,
@@ -39,7 +48,7 @@ run_EGA_combinations <- function(data,
       )
     }
 
-    # Nombre único para la combinación
+    # Nombre unico para la combinacion
     combo_name <- paste(current_corr, current_alg, sep = ".")
 
     # Ejecutar con manejo de errores y advertencias

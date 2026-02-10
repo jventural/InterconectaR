@@ -1,13 +1,21 @@
+#' Optimize Leiden Resolution
+#'
+#' Optimizes the resolution parameter for Leiden community detection.
+#'
+#' @param data Data frame with the data.
+#' @param corr Correlation method (default: "cor_auto").
+#' @param gamma_values Numeric vector of gamma resolution values to test.
+#' @param objective_function Leiden objective function (default: "CPM").
+#' @param verbose Logical; print progress messages.
+#'
+#' @export
+#' @importFrom EGAnet EGA
+#' @importFrom ggplot2 ggplot aes geom_line geom_point labs theme_minimal
 optimize_leiden_resolution <- function(data,
                                        corr = "cor_auto",
                                        gamma_values = c(0.01, 0.05, 0.1, 0.5, 1.0),
                                        objective_function = "CPM",
                                        verbose = TRUE) {
-
-  # Validación de parámetros
-  if (!requireNamespace("EGAnet", quietly = TRUE)) {
-    stop("Paquete EGAnet requerido. Instala con install.packages('EGAnet')")
-  }
 
   if (!is.data.frame(data)) {
     stop("Los datos deben ser un dataframe")
@@ -18,7 +26,7 @@ optimize_leiden_resolution <- function(data,
   tefi_values <- numeric(length(gamma_values))
   names(tefi_values) <- as.character(gamma_values)
 
-  # Variable para determinar el gamma máximo con TEFI válido
+  # Variable para determinar el gamma maximo con TEFI valido
   max_valid_gamma <- NA
 
   # Iterar sobre valores gamma
@@ -54,23 +62,23 @@ optimize_leiden_resolution <- function(data,
     # Verificar si el TEFI es NaN
     if (is.nan(tefi_values[i])) {
       if (is.na(max_valid_gamma)) {
-        max_valid_gamma <- gamma_values[i - 1] # Guardar el último gamma válido
+        max_valid_gamma <- gamma_values[i - 1] # Guardar el ultimo gamma valido
       }
-      if (verbose) message("TEFI no válido (NaN) para gamma = ", current_gamma)
+      if (verbose) message("TEFI no v\u00e1lido (NaN) para gamma = ", current_gamma)
       break
     }
   }
 
-  # Si no se encontró un máximo válido
+  # Si no se encontro un maximo valido
   if (is.na(max_valid_gamma)) {
     max_valid_gamma <- gamma_values[length(gamma_values)]
   }
 
-  # Filtrar resultados válidos
+  # Filtrar resultados validos
   valid_indices <- which(!is.nan(tefi_values) & !is.na(tefi_values))
 
   if (length(valid_indices) == 0) {
-    stop("Ningún valor gamma produjo resultados válidos")
+    stop("Ning\u00fan valor gamma produjo resultados v\u00e1lidos")
   }
 
   best_index <- which.min(tefi_values[valid_indices])
@@ -95,7 +103,7 @@ optimize_leiden_resolution <- function(data,
     optimization_plot = ggplot2::ggplot(comparison_df, ggplot2::aes(x = gamma, y = TEFI)) +
       ggplot2::geom_line(color = "steelblue") +
       ggplot2::geom_point(color = "firebrick", size = 3) +
-      ggplot2::labs(title = "Optimización de Parámetro de Resolución",
+      ggplot2::labs(title = "Optimizaci\u00f3n de Par\u00e1metro de Resoluci\u00f3n",
                     x = "Valor Gamma", y = "TEFI") +
       ggplot2::theme_minimal()
   ))

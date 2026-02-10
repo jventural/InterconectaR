@@ -1,3 +1,25 @@
+#' Plot a latent network diagram (SEM path diagram)
+#'
+#' @param model_object A model object (psychonetrics, lavaan, or similar).
+#' @param filename Output filename (with extension .png, .jpg, or .pdf).
+#' @param output_path Directory for output file (default: ".").
+#' @param width Plot width in inches.
+#' @param height Plot height in inches.
+#' @param resolution Plot resolution in DPI.
+#' @param node_labels Optional character vector of node labels.
+#' @param color_scheme Optional list with elements \code{man} and \code{lat} for colors.
+#' @param color_palette Color palette type (default: "auto").
+#' @param plot_settings Optional list of semPaths plot settings.
+#' @param device_settings Optional list of device settings.
+#' @param edge_settings Optional list of edge display settings.
+#' @param save_message Logical; print save message (default: TRUE).
+#' @param show_manifest Logical; show manifest variables (default: TRUE).
+#'
+#' @return Invisibly, NULL. Side effect: saves a plot to disk.
+#' @export
+#' @importFrom semPlot lisrelModel semPaths
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom viridis viridis
 plot_latent_network_diagram <- function(model_object,
                                         filename,
                                         output_path = ".",
@@ -13,18 +35,10 @@ plot_latent_network_diagram <- function(model_object,
                                         save_message = TRUE,
                                         show_manifest = TRUE) {
 
-  # Paquetes requeridos
-  if (!require("semPlot", quietly = TRUE)) {
-    stop("El paquete 'semPlot' es requerido. Instálalo para continuar.")
-  }
-  if (!require("RColorBrewer", quietly = TRUE)) {
-    warning("RColorBrewer no disponible. Usaré colores por defecto.")
-  }
-
   # Null-coalescing
   `%||%` <- function(x, y) if (is.null(x)) y else x
 
-  # Extraer matrices según clase del modelo
+  # Extraer matrices segun clase del modelo
   if (inherits(model_object, "psychonetrics")) {
     lambda_est <- getmatrix(model_object, "lambda")
     psi_est    <- getmatrix(model_object, "sigma_zeta")
@@ -51,7 +65,7 @@ plot_latent_network_diagram <- function(model_object,
   output_dir  <- dirname(output_file)
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
-  # Dispositivo gráfico (por defecto, sobreescribible)
+  # Dispositivo grafico (por defecto, sobreescribible)
   default_device <- list(width = width, height = height, units = "in", res = resolution)
   device_settings <- if (is.null(device_settings)) default_device else modifyList(default_device, device_settings)
 
@@ -156,7 +170,7 @@ plot_latent_network_diagram <- function(model_object,
                        colnames(lambda_est) %||% paste0("Factor", seq_len(n_latent)))
     } else if (length(node_labels) != (n_manifest + n_latent)) {
       warning(sprintf(
-        "node_labels tiene longitud %d, pero se esperaban %d. Se usarán etiquetas por defecto.",
+        "node_labels tiene longitud %d, pero se esperaban %d. Se usar\u00e1n etiquetas por defecto.",
         length(node_labels), n_manifest + n_latent))
       node_labels <- default_labels
     }

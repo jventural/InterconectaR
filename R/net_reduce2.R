@@ -1,3 +1,13 @@
+#' Network Reduction
+#'
+#' Reduces redundant node pairs using PCA or best goldbricker selection.
+#'
+#' @param data Data frame with item responses.
+#' @param badpairs Goldbricker object or list of redundant node pairs.
+#' @param method Reduction method: "PCA" or "best_goldbricker".
+#' @param keep_unpaired Logical; keep unpaired items in result.
+#'
+#' @export
 net_reduce2 <- function(data, badpairs, method = c("PCA", "best_goldbricker"),
                         keep_unpaired = TRUE) {
   method <- match.arg(method)
@@ -14,7 +24,7 @@ net_reduce2 <- function(data, badpairs, method = c("PCA", "best_goldbricker"),
     bp_full <- as.vector(t(badpairs))
   }
   if (length(bp_full) == 0) {
-    # No hay pares: devolver info mínima
+    # No hay pares: devolver info minima
     return(list(
       data = data,
       removed_items = character(0),
@@ -57,7 +67,7 @@ net_reduce2 <- function(data, badpairs, method = c("PCA", "best_goldbricker"),
   )
 
   if (method == "PCA") {
-    # Imputación mediana si hay NA (igual que net_reduce)
+    # Imputacion mediana si hay NA (igual que net_reduce)
     if (TRUE %in% is.na.data.frame(data)) {
       warning("NAs en data: se imputan medianas por defecto para PCA.")
       data <- data.frame(lapply(data, function(x) {
@@ -67,7 +77,7 @@ net_reduce2 <- function(data, badpairs, method = c("PCA", "best_goldbricker"),
     for (i in seq_len(nrow(bp))) {
       comp <- prcomp(data[, bp[i, 1:2]], scale. = TRUE, rank. = 1)$x
       newcols[, i] <- comp[, 1]
-      # Alinear con la dirección mayoritaria (igual a net_reduce)
+      # Alinear con la direccion mayoritaria (igual a net_reduce)
       if (cor(newcols[, i], data[, bp[i, 1]]) < 0 & cor(newcols[, i], data[, bp[i, 2]]) < 0) {
         newcols[, i] <- -newcols[, i]
       }
@@ -98,13 +108,13 @@ net_reduce2 <- function(data, badpairs, method = c("PCA", "best_goldbricker"),
   colnames(newcols) <- bp_colnames
 
   # --- Construir data final ---
-  # Ítems involucrados en pares
+  # Items involucrados en pares
   paired_items <- unique(as.vector(bp))
-  # Ítems no pareados en data original
+  # Items no pareados en data original
   unpaired_items <- setdiff(colnames(data), paired_items)
 
   if (keep_unpaired) {
-    # Igual que net_reduce: quita todos los de 'bp' y añade columnas nuevas
+    # Igual que net_reduce: quita todos los de 'bp' y anade columnas nuevas
     data_stripped <- data[, !colnames(data) %in% as.vector(bp), drop = FALSE]
     newdata <- cbind(data_stripped, newcols)
   } else {
@@ -117,7 +127,7 @@ net_reduce2 <- function(data, badpairs, method = c("PCA", "best_goldbricker"),
     colnames(newdata)[1] <- colnames(data)[!colnames(data) %in% as.vector(bp)]
   }
 
-  # --- Metadatos útiles ---
+  # --- Metadatos utiles ---
   original_names <- colnames(data)
   reduced_names  <- colnames(newdata)
 
@@ -125,7 +135,7 @@ net_reduce2 <- function(data, badpairs, method = c("PCA", "best_goldbricker"),
   added_variables    <- setdiff(reduced_names, original_names)
   kept_from_original <- intersect(original_names, reduced_names)
 
-  # Enriquecer pair_summary con qué se eliminó por par (informativo)
+  # Enriquecer pair_summary con que se elimino por par (informativo)
   pair_summary$removed_by_pair <- NA_character_
   if (method == "best_goldbricker") {
     pair_summary$removed_by_pair <- ifelse(

@@ -1,19 +1,25 @@
+#' @title Summarise Case Drop Stability
+#' @description Summarises case-dropping bootstrap stability results from bootnet.
+#' @param caseDroppingBoot A bootnet case-dropping bootstrap object.
+#' @param probs Numeric vector of length 2 for confidence interval quantiles.
+#' @param correlation_use Character string for cor() use argument.
+#' @param quiet Logical, suppress printing.
+#' @return A data frame with stability summary statistics.
+#' @export
+#' @importFrom dplyr distinct select rename left_join group_by summarise mutate arrange n
+#' @importFrom rlang .data
 summarise_case_drop_stability <- function(caseDroppingBoot,
                                           probs = c(0.025, 0.975),
                                           correlation_use = "pairwise.complete.obs",
                                           quiet = TRUE) {
-  # Dependencias
-  if (!requireNamespace("dplyr", quietly = TRUE)) {
-    stop("Se requiere el paquete 'dplyr'.")
-  }
   dplyr <- asNamespace("dplyr")
 
-  # Validaciones básicas
+  # Validaciones basicas
   if (!all(c("bootTable", "sampleTable") %in% names(caseDroppingBoot))) {
     stop("El objeto no parece provenir de bootnet: faltan 'bootTable' y/o 'sampleTable'.")
   }
   if (length(probs) != 2 || any(is.na(probs))) {
-    stop("'probs' debe ser numérico de longitud 2, p. ej., c(0.025, 0.975).")
+    stop("'probs' debe ser num\u00e9rico de longitud 2, p. ej., c(0.025, 0.975).")
   }
   probs <- sort(probs)
 
@@ -32,16 +38,16 @@ summarise_case_drop_stability <- function(caseDroppingBoot,
          paste(setdiff(needed_boot, names(boot)), collapse = ", "))
   }
 
-  # 1) Vector de referencia (muestra completa) por estadístico y nodo
+  # 1) Vector de referencia (muestra completa) por estadistico y nodo
   orig <- dplyr$distinct(
     dplyr$select(samp, "type", "id", "value")
   )
   orig <- dplyr$rename(orig, orig_value = "value")
 
-  # Tamaño original N0 (tomamos el máximo por seguridad)
+  # Tamano original N0 (tomamos el maximo por seguridad)
   N0 <- suppressWarnings(max(samp$nPerson, na.rm = TRUE))
 
-  # 2) Correlaciones boot vs. original por nivel de nPerson y estadístico
+  # 2) Correlaciones boot vs. original por nivel de nPerson y estadistico
   plot_df <-
     boot |>
     dplyr$select("name", "type", "id", "value", "nPerson") |>

@@ -1,22 +1,35 @@
+#' Plot centrality measures by group
+#'
+#' @param networks_groups A named list of two network objects.
+#' @param replacements Character vector of length 2 with group replacement names.
+#' @param measure_spec Character string specifying the centrality measure.
+#' @param color_palette Character vector of two colors for the groups.
+#'
+#' @return A list with elements \code{plot} (a ggplot object) and \code{table} (a data frame).
+#' @export
+#' @importFrom dplyr %>% rename mutate case_when select filter group_by summarise arrange pull
+#' @importFrom ggplot2 ggplot aes geom_line geom_point scale_shape_manual scale_color_manual xlab ylab theme_bw coord_flip labs theme element_text element_blank
+#' @importFrom forcats fct_reorder
+#' @importFrom qgraph centralityTable
 plot_centrality_by_group <- function(networks_groups, replacements, measure_spec,
                                      color_palette = c("#FF5733", "#33FFCE")) {
-  library(dplyr)
-  library(ggplot2)
-  library(forcats)
 
-  # 1) Calcular tabla de centralidad
-  cents_raw <- centralityTable(networks_groups[[1]]$graph,
-                               networks_groups[[2]]$graph)
+ # 1) Obtener nombres de los grupos
+  group_names <- names(networks_groups)
+
+  # 2) Calcular tabla de centralidad pasando los objetos de red completos
+  cents_raw <- centralityTable(networks_groups[[1]],
+                               networks_groups[[2]])
 
   cents <- cents_raw %>%
-    rename(group = graph) %>%
-    mutate(group = dplyr::case_when(
+    dplyr::rename(group = graph) %>%
+    dplyr::mutate(group = dplyr::case_when(
       group == "graph 1" ~ replacements[1],
       group == "graph 2" ~ replacements[2],
       TRUE ~ group
     )) %>%
-    select(-type) %>%
-    filter(measure == measure_spec)
+    dplyr::select(-type) %>%
+    dplyr::filter(measure == measure_spec)
 
   if (nrow(cents) == 0) {
     stop(
@@ -26,7 +39,7 @@ plot_centrality_by_group <- function(networks_groups, replacements, measure_spec
     )
   }
 
-  # Orden de nodos según media (como en el plot)
+  # Orden de nodos segun media (como en el plot)
   node_order <- cents %>%
     group_by(node) %>%
     summarise(mean_value = mean(value, na.rm = TRUE), .groups = "drop") %>%
@@ -36,7 +49,7 @@ plot_centrality_by_group <- function(networks_groups, replacements, measure_spec
   cents <- cents %>%
     mutate(node = factor(node, levels = node_order))
 
-  # 2) Gráfico
+  # 2) Grafico
   Figure2 <- ggplot(
     data = cents,
     aes(

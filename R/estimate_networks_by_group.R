@@ -1,3 +1,23 @@
+#' Estimate Networks by Group
+#'
+#' Estimates network models separately for each group in the data.
+#'
+#' @param data Data frame containing the data.
+#' @param group_var Name of the grouping variable column.
+#' @param columns Character vector of variable names to include.
+#' @param default Network estimation method (default: "ggmModSelect").
+#' @param stepwise Logical; use stepwise model selection.
+#' @param corMethod Correlation method (default: "spearman").
+#' @param abbreviate_vars Logical; abbreviate variable names.
+#' @param abbr_minlength Minimum length for abbreviated names.
+#' @param labels Optional custom labels for nodes.
+#' @param set_labels_on_graph Logical; apply labels to graph object.
+#'
+#' @export
+#' @importFrom dplyr %>%
+#' @importFrom bootnet estimateNetwork
+#' @importFrom purrr map
+#' @importFrom tibble tibble
 estimate_networks_by_group <- function(data,
                                        group_var,
                                        columns,
@@ -9,20 +29,11 @@ estimate_networks_by_group <- function(data,
                                        labels           = NULL,   # << NUEVO
                                        set_labels_on_graph = TRUE # << NUEVO
 ) {
-  # Instalar/cargar paquetes necesarios
-  if (!requireNamespace("dplyr", quietly = TRUE))     install.packages("dplyr")
-  if (!requireNamespace("bootnet", quietly = TRUE))   install.packages("bootnet")
-  if (!requireNamespace("purrr", quietly = TRUE))     install.packages("purrr")
-
-  library(dplyr)
-  library(bootnet)
-  library(purrr)
-
   # -------- Helpers --------
   # Construye las etiquetas finales por variable (original -> label)
   build_label_map <- function(orig_names, labels, abbreviate_vars, abbr_minlength) {
     if (!is.null(labels)) {
-      # Caso A: labels NOMBRADO: c("BP1"="Ítem 1", "BP2"="Ítem 2", ...)
+      # Caso A: labels NOMBRADO: c("BP1"="Item 1", "BP2"="Item 2", ...)
       if (!is.null(names(labels)) && any(nzchar(names(labels)))) {
         lab_map <- labels[orig_names]
         if (any(is.na(lab_map))) {
@@ -52,24 +63,25 @@ estimate_networks_by_group <- function(data,
     }
   }
 
-  # -------- Preparación por grupos --------
+  # -------- Preparacion por grupos --------
   unique_groups <- unique(data[[group_var]])
 
   # Dividir el data.frame por grupo y quitar la columna de grupo
-  list_of_data <- data %>%
-    dplyr::filter(.data[[group_var]] %in% unique_groups) %>%
-    dplyr::select(dplyr::all_of(columns), dplyr::all_of(group_var)) %>%
-    dplyr::group_by(.data[[group_var]]) %>%
-    dplyr::group_split() %>%
-    purrr::map(~ dplyr::select(.x, -dplyr::all_of(group_var))) %>%
-    purrr::set_names(unique_groups)
+  # Usar subset en lugar de select para evitar conflicto con BGGM::select
+  data_subset <- data[, c(columns, group_var), drop = FALSE]
+
+  list_of_data <- list()
+  for (grp in unique_groups) {
+    grp_data <- data_subset[data_subset[[group_var]] == grp, columns, drop = FALSE]
+    list_of_data[[as.character(grp)]] <- grp_data
+  }
 
   # Etiquetas finales (mismas para todos los grupos porque columnas son las mismas)
   orig_names_global <- columns
   label_map_global  <- build_label_map(orig_names_global, labels, abbreviate_vars, abbr_minlength)
   # label_map_global es un named vector: names = originales, values = labels finales
 
-  # -------- Estimación por grupo --------
+  # -------- Estimacion por grupo --------
   estimate_for_group <- function(df_group) {
     # Asegurar el mismo orden de columnas que 'columns'
     df_group <- df_group[, orig_names_global, drop = FALSE]
@@ -77,13 +89,21 @@ estimate_networks_by_group <- function(data,
     # (Mantengo colnames del df para estabilidad; labels se aplican al objeto estimado)
     # Si antes abreviabas colnames(df_group), ya no es necesario: las etiquetas van por dimnames
 
-    # Estimar la red
-    net <- bootnet::estimateNetwork(
-      df_group,
-      default   = default,
-      stepwise  = stepwise,
-      corMethod = corMethod
-    )
+    # Estimar la red - solo pasar stepwise si el metodo lo soporta
+    if (default == "ggmModSelect") {
+      net <- bootnet::estimateNetwork(
+        df_group,
+        default   = default,
+        stepwise  = stepwise,
+        corMethod = corMethod
+      )
+    } else {
+      net <- bootnet::estimateNetwork(
+        df_group,
+        default   = default,
+        corMethod = corMethod
+      )
+    }
 
     # Aplicar labels al objeto (dimnames del grafo y, si existe, datos internos)
     if (isTRUE(set_labels_on_graph)) {

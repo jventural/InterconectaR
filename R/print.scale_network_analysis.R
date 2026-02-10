@@ -1,3 +1,10 @@
+#' Print method for scale_network_analysis objects
+#'
+#' @param x An object of class \code{scale_network_analysis}.
+#' @param ... Additional arguments passed to print methods.
+#'
+#' @return Invisibly returns the input object.
+#' @export
 print.scale_network_analysis <- function(x, ...) {
   cat(x$data_summary)
 

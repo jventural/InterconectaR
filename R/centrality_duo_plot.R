@@ -1,3 +1,27 @@
+#' Dual Centrality Plot
+#'
+#' Creates a plot comparing two centrality measures.
+#'
+#' @param qgraph_obj A qgraph object.
+#' @param network Estimated network object (e.g., from bootnet).
+#' @param groups List of communities for bridge calculation.
+#' @param measure0 Primary centrality measure name.
+#' @param measure1 Secondary bridge measure name (NULL for single measure).
+#' @param color_palette Character vector of colors.
+#' @param use_abbrev Logical; use abbreviated node names.
+#' @param labels Optional character vector of custom node labels.
+#'
+#' @export
+#' @importFrom qgraph centralityTable
+#' @importFrom dplyr %>% filter select arrange rename mutate inner_join bind_cols desc
+#' @importFrom networktools bridge
+#' @importFrom tibble tibble
+#' @importFrom ggplot2 ggplot aes geom_point geom_line scale_color_manual labs theme_minimal theme element_text element_rect element_line
+#' @importFrom tidyr pivot_longer
+#' @importFrom stringr str_detect
+#' @importFrom forcats fct_reorder
+#' @importFrom purrr map
+#' @importFrom rlang quo sym !! :=
 centrality_duo_plot <- function(qgraph_obj,
                                 network,
                                 groups = NULL,
@@ -5,13 +29,8 @@ centrality_duo_plot <- function(qgraph_obj,
                                 measure1 = NULL,
                                 color_palette = c("#6C5CE7", "#00B894"),
                                 use_abbrev = TRUE,
-                                labels = NULL) {  # NUEVO PARÁMETRO
-  # Cargar librerías necesarias
-  library(qgraph); library(dplyr); library(networktools)
-  library(tibble); library(ggplot2); library(tidyr)
-  library(stringr); library(forcats); library(purrr)
-
-  # Etiquetas para las métricas
+                                labels = NULL) {  # NUEVO PARAMETRO
+  # Etiquetas para las metricas
   label0 <- measure0
   label1 <- measure1
 
@@ -22,12 +41,12 @@ centrality_duo_plot <- function(qgraph_obj,
   full_names <- rownames(network$graph)
   if (is.null(full_names)) full_names <- colnames(network$graph)
 
-  # NUEVO: Determinar qué etiquetas usar
+  # NUEVO: Determinar que etiquetas usar
   if (!is.null(labels)) {
     # Validar longitud de labels personalizados
     if (length(labels) != length(full_names)) {
       stop(paste("La longitud de 'labels' (", length(labels),
-                 ") debe coincidir con el número de nodos (",
+                 ") debe coincidir con el n\u00famero de nodos (",
                  length(full_names), ")"))
     }
     qgraph_labels <- labels
@@ -53,7 +72,7 @@ centrality_duo_plot <- function(qgraph_obj,
 
     # Validar que existan grupos
     if (is.null(groups)) {
-      warning("No se pueden calcular medidas de puente sin definir grupos. Se omitirá measure1.")
+      warning("No se pueden calcular medidas de puente sin definir grupos. Se omitir\u00e1 measure1.")
       measure1 <- NULL
       label1 <- NULL
     } else {
@@ -67,12 +86,12 @@ centrality_duo_plot <- function(qgraph_obj,
 
         # Validar resultado de bridge
         if (is.null(b_obj)) {
-          warning("La función bridge() devolvió NULL. Se omitirá measure1.")
+          warning("La funci\u00f3n bridge() devolvi\u00f3 NULL. Se omitir\u00e1 measure1.")
           measure1 <- NULL
           label1 <- NULL
         } else if (!measure1 %in% names(b_obj)) {
-          warning(paste("La medida", measure1, "no se encontró en los resultados de bridge. Medidas disponibles:",
-                        paste(names(b_obj), collapse = ", "), ". Se omitirá measure1."))
+          warning(paste("La medida", measure1, "no se encontr\u00f3 en los resultados de bridge. Medidas disponibles:",
+                        paste(names(b_obj), collapse = ", "), ". Se omitir\u00e1 measure1."))
           measure1 <- NULL
           label1 <- NULL
         } else {
@@ -81,7 +100,7 @@ centrality_duo_plot <- function(qgraph_obj,
 
           # Validar valores de puente
           if (is.null(bridge_values) || length(bridge_values) == 0) {
-            warning(paste("La medida", measure1, "está vacía o es NULL. Se omitirá measure1."))
+            warning(paste("La medida", measure1, "est\u00e1 vac\u00eda o es NULL. Se omitir\u00e1 measure1."))
             measure1 <- NULL
             label1 <- NULL
           } else {
@@ -91,7 +110,7 @@ centrality_duo_plot <- function(qgraph_obj,
             if (length(bridge_values) != length(qgraph_labels)) {
               warning(paste("Longitud de bridge_values (", length(bridge_values),
                             ") no coincide con qgraph_labels (", length(qgraph_labels),
-                            "). Se omitirá measure1."))
+                            "). Se omitir\u00e1 measure1."))
               measure1 <- NULL
               label1 <- NULL
             } else {
@@ -132,7 +151,7 @@ centrality_duo_plot <- function(qgraph_obj,
                     bridge_data %>% select(!!sym(measure1))
                   )
                 } else {
-                  warning("No se pueden unir centralidad y puente por diferencia en número de filas. Se omitirá measure1.")
+                  warning("No se pueden unir centralidad y puente por diferencia en n\u00famero de filas. Se omitir\u00e1 measure1.")
                   measure1 <- NULL
                   label1 <- NULL
                 }
@@ -141,14 +160,14 @@ centrality_duo_plot <- function(qgraph_obj,
           }
         }
       }, error = function(e) {
-        warning(paste("Error al calcular medidas de puente:", e$message, ". Se omitirá measure1."))
+        warning(paste("Error al calcular medidas de puente:", e$message, ". Se omitir\u00e1 measure1."))
         measure1 <- NULL
         label1 <- NULL
       })
     }
   }
 
-  # --- Generar gráfico con dos medidas ---
+  # --- Generar grafico con dos medidas ---
   if (!is.null(measure1) && !is.null(label1) && exists("cents2")) {
     y_var     <- if (use_abbrev) quo(Abrev) else quo(full_name)
 
@@ -165,7 +184,7 @@ centrality_duo_plot <- function(qgraph_obj,
     breaks <- c(label0, label1)
     labels <- c(label0, label1)
 
-    # Crear gráfico
+    # Crear grafico
     Figura <- ggplot(cents_long,
                      aes(x = Value,
                          y = fct_reorder(!!y_var, Value),
@@ -174,7 +193,7 @@ centrality_duo_plot <- function(qgraph_obj,
       geom_point(size = 4, alpha = 0.8) +
       geom_line(linewidth = 1.2, alpha = 0.7) +
       theme_minimal() +
-      labs(x = "z-score", y = "Nodos", color = "Métrica") +
+      labs(x = "z-score", y = "Nodos", color = "M\u00e9trica") +
       scale_color_manual(
         values = pal,
         breaks = breaks,
@@ -203,7 +222,7 @@ centrality_duo_plot <- function(qgraph_obj,
       plot  = Figura
     ))
 
-    # --- Generar gráfico con una sola medida ---
+    # --- Generar grafico con una sola medida ---
   } else {
     cents_single <- cents_expect %>%
       select(full_name, Abrev, !!sym(measure0)) %>%
@@ -220,7 +239,7 @@ centrality_duo_plot <- function(qgraph_obj,
       geom_line(color = pal_single, size = 1.2, alpha = 0.7) +
       geom_point(color = pal_single, size = 4, alpha = 0.8) +
       theme_minimal() +
-      labs(x = "z-score", y = "Nodos", color = "Métrica") +
+      labs(x = "z-score", y = "Nodos", color = "M\u00e9trica") +
       scale_color_manual(
         values = pal_single,
         breaks = label0,

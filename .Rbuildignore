@@ -1,2 +1,13 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.github$
+^LICENSE\.md$
+^README\.Rmd$
+^codecov\.yml$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.lintr$
+^cran-comments\.md$
+^test_.*\.R$
+^InterconectaR_Logo\.jpg$

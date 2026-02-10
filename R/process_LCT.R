@@ -1,5 +1,12 @@
+#' Process LCT (Loadings Comparison Test) results
+#'
+#' @param ... One or more LCT result objects, passed as named arguments.
+#'
+#' @return A tibble summarizing the LCT results.
+#' @export
+#' @importFrom dplyr bind_rows
+#' @importFrom tibble tibble
 process_LCT <- function(...) {
-  library(dplyr)
   # Capturamos tanto los valores como los nombres de los argumentos
   dot_vals  <- list(...)
   dot_exprs <- match.call(expand.dots = FALSE)$...
@@ -8,7 +15,7 @@ process_LCT <- function(...) {
   # Asignamos nombres a la lista
   lct_list <- setNames(dot_vals, dot_names)
 
-  # Función interna para procesar un LCT
+  # Funcion interna para procesar un LCT
   .process_one <- function(lct, id) {
     tibble(
       id           = id,

@@ -1,20 +1,55 @@
+#' Create a combined panel with qgraph network and centrality plot
+#'
+#' @param Figura1_Derecha A ggplot object for the right panel (centrality plot).
+#' @param network A network object with elements \code{graph} and \code{labels}.
+#' @param groups Named list mapping factor names to node indices.
+#' @param error_Model Pie values for error model visualization.
+#' @param labels Optional character vector of node labels.
+#' @param abbreviate_labels Logical; abbreviate labels to 3 characters.
+#' @param ncol Number of columns in the layout.
+#' @param widths Relative widths of the panels.
+#' @param dpi Resolution in DPI for the qgraph rendering.
+#' @param legend.cex Legend text size for qgraph.
+#' @param legend_title Title for the legend.
+#' @param keep_centrality_scale Logical; keep original scale of centrality plot.
+#' @param layoutScale Numeric vector of length 2 for layout scaling.
+#' @param GLratio Graph-to-legend ratio.
+#' @param vsize Node size.
+#' @param esize Edge size.
+#' @param node.width Node width.
+#' @param curveAll Edge curvature.
+#' @param palette Color palette name.
+#' @param layout Layout algorithm.
+#' @param edge.labels Logical; show edge labels.
+#' @param edge.label.cex Edge label text size.
+#'
+#' @return A combined patchwork plot object.
+#' @export
+#' @importFrom ggplot2 ggplot annotation_custom theme_void labs theme element_text
+#' @importFrom qgraph qgraph
+#' @importFrom png readPNG
+#' @importFrom grid rasterGrob
+#' @importFrom patchwork plot_layout plot_annotation
+#' @importFrom Cairo CairoPNG
 qgraph_centrality_panel <- function(Figura1_Derecha, network, groups, error_Model,
                                     labels = NULL,
                                     abbreviate_labels = FALSE,
                                     ncol = 2, widths = c(0.50, 0.60),
                                     dpi = 600,
                                     legend.cex = 0.1,
-                                    legend_title = "Métrica",
-                                    keep_centrality_scale = TRUE) {
-
-  # Cargar librerías (no recomendado instalar dentro de función en paquetes)
-  required_packages <- c("ggplot2", "qgraph", "png", "grid", "patchwork", "Cairo")
-  for (pkg in required_packages) {
-    if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
-      install.packages(pkg, dependencies = TRUE)
-      library(pkg, character.only = TRUE)
-    }
-  }
+                                    legend_title = "M\u00e9trica",
+                                    keep_centrality_scale = TRUE,
+                                    # Parametros de qgraph
+                                    layoutScale = c(0.9, 0.9),
+                                    GLratio = 2,
+                                    vsize = 18,
+                                    esize = 18,
+                                    node.width = 0.8,
+                                    curveAll = 2,
+                                    palette = "pastel",
+                                    layout = "spring",
+                                    edge.labels = TRUE,
+                                    edge.label.cex = 1) {
 
   abbreviate_names <- function(x) substr(x, 1, 3)
 
@@ -28,21 +63,21 @@ qgraph_centrality_panel <- function(Figura1_Derecha, network, groups, error_Mode
   Cairo::CairoPNG(tmp_file, width = 1600, height = 1000, res = dpi)
   qgraph(network$graph,
          groups = groups,
-         curveAll = 2,
-         vsize = 18,
-         esize = 18,
-         palette = "pastel",
-         layout = "spring",
-         edge.labels = TRUE,
+         curveAll = curveAll,
+         vsize = vsize,
+         esize = esize,
+         palette = palette,
+         layout = layout,
+         edge.labels = edge.labels,
          labels = final_labels,
          legend.cex = legend.cex,
          legend = TRUE,
          details = FALSE,
-         node.width = 0.8,
+         node.width = node.width,
          pie = error_Model,
-         layoutScale = c(0.9, 0.9),
-         GLratio = 2,
-         edge.label.cex = 1)
+         layoutScale = layoutScale,
+         GLratio = GLratio,
+         edge.label.cex = edge.label.cex)
   dev.off()
 
   img <- png::readPNG(tmp_file)

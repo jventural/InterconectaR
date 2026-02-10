@@ -1,16 +1,20 @@
+#' Plot centrality stability diagnostics
+#'
+#' @param caseDroppingBoot Case-dropping bootstrap result object.
+#' @param nonParametricBoot Non-parametric bootstrap result object.
+#' @param statistics Character string specifying the statistic (default: "bridgeStrength").
+#' @param labels Logical; whether to show labels (default: FALSE).
+#'
+#' @return A combined patchwork plot object.
+#' @export
+#' @importFrom ggplot2 scale_y_continuous
+#' @importFrom patchwork plot_layout plot_annotation
+#' @importFrom scales number_format
 plot_centrality_stability <- function(caseDroppingBoot, nonParametricBoot,
                                        statistics = "bridgeStrength",
                                        labels = FALSE) {
-  # Verificar e instalar librerías necesarias
-  required_packages <- c("ggplot2", "patchwork", "scales")
-  for (pkg in required_packages) {
-    if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
-      install.packages(pkg, dependencies = TRUE)
-      library(pkg, character.only = TRUE)
-    }
-  }
 
-  # 1) Crear p1 y añadir scale_y sin importar si ya existe—luego lo silenciaremos al imprimir
+  # 1) Crear p1 y anadir scale_y sin importar si ya existe--luego lo silenciaremos al imprimir
   p1 <- plot(caseDroppingBoot, statistics = statistics, labels = labels) +
     ggplot2::scale_y_continuous(
       limits = c(-1, 1),

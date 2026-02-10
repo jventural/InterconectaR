@@ -1,3 +1,22 @@
+#' Combine Group Plots
+#'
+#' Combines network, centrality, and bridge plots into a labeled panel.
+#'
+#' @param red_group Network graph object (ggplot, grob, or magick-image).
+#' @param plot_centralidad_group ggplot centrality plot.
+#' @param bridge_plot_group Optional ggplot bridge centrality plot.
+#' @param width_a Width of network panel.
+#' @param width_bc Width of centrality panels.
+#' @param show_plot Logical; display the combined plot.
+#'
+#' @export
+#' @importFrom ggplot2 ggplot theme theme_void margin
+#' @importFrom gridExtra arrangeGrob
+#' @importFrom grid unit gTree gList viewport rasterGrob
+#' @importFrom cowplot ggdraw draw_label
+#' @importFrom ggplotify as.grob as.ggplot
+#' @importFrom magick image_write
+#' @importFrom png readPNG
 combine_groupBy <- function(
     red_group,
     plot_centralidad_group,
@@ -6,24 +25,7 @@ combine_groupBy <- function(
     width_bc = 4.5,
     show_plot = TRUE
 ) {
-  # — 0) Instalar/cargar librerías necesarias --------------------------------
-  required_packages <- c(
-    "ggplot2",    # Para objetos ggplot
-    "gridExtra",  # Para arrangeGrob
-    "grid",       # Para grobs y viewports
-    "cowplot",    # Para ggdraw y draw_label
-    "ggplotify",  # Para convertir ggplot/grob a gtable
-    "magick",     # Para image_graph e image_write (si red_group es magick-image)
-    "png"         # Para readPNG
-  )
-  for (pkg in required_packages) {
-    if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
-      install.packages(pkg, dependencies = TRUE)
-      library(pkg, character.only = TRUE)
-    }
-  }
-
-  # — 1) Procesar 'red_group' según su tipo ----------------------------------
+  # -- 1) Procesar 'red_group' segun su tipo ----------------------------------
   # Si es una magick-image, leerla a rasterGrob; si es ggplot, convertir a grob;
   # si ya es grob/gtable, usarla directamente.
   if (inherits(red_group, "magick-image")) {
@@ -47,7 +49,7 @@ combine_groupBy <- function(
     stop("`red_group` debe ser un ggplot, un grob (grid) o una magick-image.")
   }
 
-  # — 2) Crear etiquetas A, B y C --------------------------------------------
+  # -- 2) Crear etiquetas A, B y C --------------------------------------------
   label_a <- cowplot::ggdraw() +
     cowplot::draw_label("A", fontface = "bold", size = 14, x = 0.02, hjust = 0) +
     theme_void()
@@ -58,7 +60,7 @@ combine_groupBy <- function(
     cowplot::draw_label("C", fontface = "bold", size = 14, x = 0.02, hjust = 0) +
     theme_void()
 
-  # — 3) Preparar los subplots de centralidad (B) y bridge (C) ---------------
+  # -- 3) Preparar los subplots de centralidad (B) y bridge (C) ---------------
   b_plot <- cowplot::ggdraw(plot_centralidad_group) +
     theme(plot.margin = grid::unit(c(5, 5, 5, 5), "pt"))
 
@@ -69,7 +71,7 @@ combine_groupBy <- function(
     c_plot <- cowplot::ggdraw() + theme_void()
   }
 
-  # — 4) Construir la “columna derecha” (solo B, o B + C) ---------------------
+  # -- 4) Construir la "columna derecha" (solo B, o B + C) ---------------------
   if (is.null(bridge_plot_group)) {
     right_col_grob <- gridExtra::arrangeGrob(
       gridExtra::arrangeGrob(
@@ -102,7 +104,7 @@ combine_groupBy <- function(
     rel_widths <- c(width_a, width_bc)
   }
 
-  # — 5) Construir la “columna izquierda” (A + red_grob escalado) -------------
+  # -- 5) Construir la "columna izquierda" (A + red_grob escalado) -------------
   # Para forzar que red_grob ocupe el 99% de la celda, lo envolvemos en un gTree
   # con un viewport que le da casi todo el espacio (0.99 "npc").
   raster_vp <- grid::gTree(
@@ -121,7 +123,7 @@ combine_groupBy <- function(
     heights = c(0.05, 0.95)
   )
 
-  # — 6) Unir izquierda y derecha en un solo gtable --------------------------
+  # -- 6) Unir izquierda y derecha en un solo gtable --------------------------
   combined_grob <- gridExtra::arrangeGrob(
     left_col_grob,
     right_col_grob,
@@ -129,14 +131,14 @@ combine_groupBy <- function(
     widths = rel_widths
   )
 
-  # — 7) Convertir el gtable final a un objeto ggplot2 -----------------------
+  # -- 7) Convertir el gtable final a un objeto ggplot2 -----------------------
   combined_gg <- ggplotify::as.ggplot(combined_grob)
 
-  # — 8) Mostrar en pantalla si show_plot = TRUE -----------------------------
+  # -- 8) Mostrar en pantalla si show_plot = TRUE -----------------------------
   if (isTRUE(show_plot)) {
     print(combined_gg)
   }
 
-  # — 9) Devolver el objeto ggplot2 listo para ggsave() ----------------------
+  # -- 9) Devolver el objeto ggplot2 listo para ggsave() ----------------------
   return(combined_gg)
 }
