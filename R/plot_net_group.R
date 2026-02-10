@@ -78,8 +78,8 @@ plot_net_group <- function(
     edge_min = 0.00,
     lwd_range = c(0.4, 4.5),
     alpha_range = c(0.15, 1),
-    edge_color_pos = "black",
-    edge_color_neg = "#E74C3C",
+    edge_color_pos = NULL,
+    edge_color_neg = NULL,
     edge_curvature = 0,
     show_edge_values   = TRUE,
     edge_label_digits  = 2,
@@ -108,6 +108,15 @@ plot_net_group <- function(
     group_cols <- stats::setNames(pal, names(groups_list))
   } else if (is.null(group_cols)) {
     group_cols <- c(Nodos = "#95A5A6")
+  }
+
+  # --- Auto-derivar colores de aristas desde la paleta ----------------------
+  if (is.null(edge_color_pos) || is.null(edge_color_neg)) {
+    pal5 <- wesanderson::wes_palette(palette, 5, type = "continuous")
+    pal_rgb <- grDevices::col2rgb(pal5)
+    warmth <- pal_rgb["red", ] - pal_rgb["blue", ]
+    if (is.null(edge_color_pos)) edge_color_pos <- pal5[which.min(warmth)]
+    if (is.null(edge_color_neg)) edge_color_neg <- pal5[which.max(warmth)]
   }
 
   # --- Abreviaturas + leyenda de nombres ------------------------------------
@@ -212,8 +221,11 @@ plot_net_group <- function(
 
   # --- Color gradiente por intensidad ----------------------------------------
   if (nrow(edges) > 0) {
-    pos_ramp <- colorRamp(c("grey85", edge_color_pos))
-    neg_ramp <- colorRamp(c("#FADBD8", edge_color_neg))
+    lighten <- function(col, f = 0.85) {
+      r <- col2rgb(col); grDevices::rgb(r[1]+(255-r[1])*f, r[2]+(255-r[2])*f, r[3]+(255-r[3])*f, max=255)
+    }
+    pos_ramp <- colorRamp(c(lighten(edge_color_pos), edge_color_pos))
+    neg_ramp <- colorRamp(c(lighten(edge_color_neg), edge_color_neg))
     edges <- edges %>%
       dplyr::mutate(
         intensity = abs_w / maxW,
