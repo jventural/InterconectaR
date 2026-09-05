@@ -109,6 +109,23 @@ remotes::install_github("jventural/InterconectaR")
 | `choose_best_method()` | Select the best estimation method based on correlation analysis |
 | `structure_groups()` | Structure group labels for network communities |
 
+### Interactive Application
+
+| Function | Description |
+|---|---|
+| `run_netpowerlab()` | Launch NetPowerLab: plan the sample size of a network study with `bootnet::netSimulator()` and `powerly::powerly()` |
+
+```r
+InterconectaR::run_netpowerlab()
+```
+
+The reference network is declared block by block, one block per instrument, and acts as the
+effect size of the design. The app reports what is recovered at each sample size (sensitivity,
+specificity and the correlation between estimated and true weights), recommends the sample size
+that reaches a declared performance, and writes both the reproducible script and a draft of the
+Participants section. It needs `shiny`, `bslib` and `powerly`, which are suggested rather than
+required: `install.packages(c("shiny", "bslib", "powerly"))`.
+
 ## Examples
 
 ### Estimate and visualize networks by group
