@@ -13,7 +13,28 @@
 #' @param dpi Resolution in dots per inch.
 #' @param legend.cex Legend text size multiplier.
 #'
+#' @return A patchwork object with the network on the left and the
+#'   centrality plot on the right.
 #' @export
+#' @examples
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+#' g <- qgraph::qgraph(net$graph, DoNotPlot = TRUE)
+#' cent <- centrality_plots2(g, net,
+#'                           groups = rep(c("A", "B"), each = 4),
+#'                           measure1 = "Bridge Expected Influence (1-step)")
+#' r2 <- mgm_error_metrics(items, type = rep("g", 8), level = rep(1, 8))$R2
+#' combine_graphs_centrality2(cent$plot, net, groups = list(A = 1:4, B = 5:8),
+#'                            error_Model = r2, dpi = 100)
 #' @importFrom ggplot2 ggplot annotation_custom theme_void labs scale_color_discrete scale_shape_discrete theme
 #' @importFrom qgraph qgraph
 #' @importFrom png readPNG
@@ -89,9 +110,6 @@ combine_graphs_centrality2  <- function(Figura1_Derecha, network, groups, error_
 
   # Asignar clase personalizada y definir metodo print para suprimir el aviso
   class(combinado) <- c("silent_gg", class(combinado))
-  assign("print.silent_gg",
-         function(x, ...) suppressWarnings(NextMethod()),
-         envir = .GlobalEnv)
 
   # Eliminar archivo temporal
   unlink(tmp_file)

@@ -35,3 +35,25 @@ Invisible list of qgraph objects.
 \description{
 Creates visualizations for psychonetrics latent variable models.
 }
+\examples{
+\donttest{
+if (requireNamespace("psychonetrics", quietly = TRUE)) {
+  set.seed(123)
+  n <- 300
+  f1 <- rnorm(n)
+  f2 <- 0.3 * f1 + rnorm(n)
+  items <- data.frame(
+    sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+    sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+  )
+  names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+  lambda <- matrix(0, 8, 2)
+  lambda[1:4, 1] <- 1
+  lambda[5:8, 2] <- 1
+  mod <- psychonetrics::lvm(items, lambda = lambda, verbose = FALSE)
+  mod <- psychonetrics::runmodel(mod, verbose = FALSE)
+  plot_lvm(mod, plot = c("loadings", "latents"))
+}
+}
+}

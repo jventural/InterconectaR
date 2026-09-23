@@ -4,6 +4,16 @@
 #' @param results Data frame from boot_and_evaluate with TEFI values.
 #' @return A ggplot object showing TEFI trends.
 #' @export
+#' @examples
+#' # A small table with the structure returned by boot_and_evaluate()
+#' set.seed(1)
+#' res <- expand.grid(Algorithm = c("louvain", "walktrap"),
+#'                    Correlation_Method = c("pearson", "spearman"),
+#'                    Sample_Size = c(100, 250, 500), Simulation = 1:5,
+#'                    stringsAsFactors = FALSE)
+#' res$TEFI <- rnorm(nrow(res), -5, 0.3)
+#'
+#' plot_avg_TEFI(res)
 #' @importFrom dplyr %>% group_by summarise
 #' @importFrom ggplot2 ggplot aes geom_line geom_point scale_x_continuous labs theme_minimal facet_wrap
 plot_avg_TEFI <- function(results) {

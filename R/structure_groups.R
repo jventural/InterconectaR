@@ -4,6 +4,9 @@
 #' @param values Integer vector of group sizes.
 #' @return A named list of integer sequences.
 #' @export
+#' @examples
+#' # Two scales: the first four items and the next five
+#' structure_groups(c("Anxiety", "Depression"), c(4, 5))
 structure_groups <- function(names, values) {
   if(length(names) != length(values)) {
     stop("The length of names and values must be the same.")

@@ -11,6 +11,27 @@
 #' @export
 #' @importFrom RColorBrewer brewer.pal brewer.pal.info
 #' @importFrom qgraph qgraph qgraph.loadings
+#' @examples
+#' \donttest{
+#' if (requireNamespace("psychonetrics", quietly = TRUE)) {
+#'   set.seed(123)
+#'   n <- 300
+#'   f1 <- rnorm(n)
+#'   f2 <- 0.3 * f1 + rnorm(n)
+#'   items <- data.frame(
+#'     sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'     sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#'   )
+#'   names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#'   lambda <- matrix(0, 8, 2)
+#'   lambda[1:4, 1] <- 1
+#'   lambda[5:8, 2] <- 1
+#'   mod <- psychonetrics::lvm(items, lambda = lambda, verbose = FALSE)
+#'   mod <- psychonetrics::runmodel(mod, verbose = FALSE)
+#'   plot_lvm(mod, plot = c("loadings", "latents"))
+#' }
+#' }
 plot_lvm <- function(
     x, # Objeto psychonetrics
     plot = c("network", "loadings", "residcors", "residpcors", "latents"),
@@ -22,8 +43,8 @@ plot_lvm <- function(
 ){
 
   if (missing(ask)) ask <- length(plot) > 1
-  parOrig <- par()
-  par(ask = ask)
+  old_par <- par(ask = ask)
+  on.exit(par(old_par), add = TRUE)
 
   # Verificar disponibilidad de la paleta y cargar colores
   available_palettes <- rownames(RColorBrewer::brewer.pal.info)
@@ -49,8 +70,13 @@ plot_lvm <- function(
     stop("No matching observed variables found.")
   }
 
-  # Obtener las correlaciones parciales y residuales
-  pcor <- cov2cor(x@modelmatrices$fullsample$sigma_epsilon)
+  # Correlaciones parciales residuales: omega_epsilon cuando psychonetrics la
+  # calcula; si no, se derivan de la inversa de sigma_epsilon
+  pcor <- x@modelmatrices$fullsample$omega_epsilon
+  if (is.null(pcor)) {
+    pcor <- qgraph::wi2net(solve(x@modelmatrices$fullsample$sigma_epsilon))
+  }
+  pcor <- as.matrix(pcor)
 
   # Definir 'shape' y asegurarse que 'vsize' es numerico
   shape <- rep("circle", ncol(pcor))

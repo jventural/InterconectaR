@@ -17,3 +17,9 @@ A list with the best method name and details.
 \description{
 Selects the best correlation comparison method based on sample size and average inter-correlation.
 }
+\examples{
+r <- matrix(c(1, 0.40, 0.35,
+              0.40, 1, 0.30,
+              0.35, 0.30, 1), nrow = 3)
+choose_best_method(n = 250, r_matrix = r)
+}

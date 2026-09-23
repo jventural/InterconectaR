@@ -4,15 +4,34 @@
 \alias{get_edge_weights_summary}
 \title{Edge Weights Summary}
 \usage{
-get_edge_weights_summary(network, abs_weights = T, round_digits = 2)
+get_edge_weights_summary(network, abs_weights = TRUE, round_digits = 2)
 }
 \arguments{
-\item{network}{Network object with a graph element.}
+\item{network}{Network object with a graph element (e.g., from
+\code{bootnet::estimateNetwork()}).}
 
 \item{abs_weights}{Logical; use absolute edge weights.}
 
 \item{round_digits}{Number of decimal places for rounding.}
 }
+\value{
+A one-row data frame with the number of non-zero edges (\code{N}) and
+the mean, standard deviation, minimum and maximum of their weights.
+}
 \description{
 Computes descriptive statistics for network edge weights.
+}
+\examples{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+get_edge_weights_summary(net)
 }

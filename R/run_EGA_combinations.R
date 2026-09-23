@@ -6,6 +6,20 @@
 #' @param leiden_args List of additional arguments for the Leiden algorithm.
 #' @return A list of EGA results with class "EGA_combinations".
 #' @export
+#' @examples
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' combos <- run_EGA_combinations(items, corr = c("pearson", "spearman"),
+#'                                algorithm = c("louvain", "walktrap"))
+#' names(combos)
 #' @importFrom EGAnet EGA
 run_EGA_combinations <- function(data,
                                  corr = c("cor_auto", "pearson", "spearman"),

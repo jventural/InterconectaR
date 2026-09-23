@@ -23,6 +23,30 @@ centrality_bridge_plot(
 
 \item{communities}{Community membership vector for bridge calculation.}
 }
+\value{
+A list with \code{table} (a data frame with the bridge centrality of
+each node in each group, raw and as z-scores) and \code{plot} (a ggplot
+object).
+}
 \description{
 Creates a comparative bridge centrality plot for two groups.
+}
+\examples{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+items$sex <- rep(c("Female", "Male"), each = n / 2)
+
+nets <- estimate_networks_by_group(items, group_var = "sex",
+                                   columns = names(items)[1:8],
+                                   default = "EBICglasso")
+res <- centrality_bridge_plot(nets, group_names = c("Female", "Male"),
+                              communities = rep(c("A", "B"), each = 4))
+res$plot
 }

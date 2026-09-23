@@ -20,6 +20,28 @@ net_reduce2(
 
 \item{keep_unpaired}{Logical; keep unpaired items in result.}
 }
+\value{
+A list with \code{data} (the reduced data frame), \code{removed_items},
+\code{added_variables}, \code{kept_from_original} and \code{pair_summary} (a data frame
+describing what was done with each redundant pair).
+}
 \description{
 Reduces redundant node pairs using PCA or best goldbricker selection.
+}
+\examples{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+# a near-duplicate of A1
+items$A1_copy <- items$A1 + rnorm(n, 0, 0.2)
+
+redundant <- networktools::goldbricker(items, threshold = 0.5)
+reduced <- net_reduce2(items, redundant, method = "PCA")
+reduced$pair_summary
 }

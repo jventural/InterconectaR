@@ -1,7 +1,7 @@
-#' @name globals
-#' @title Global variables and imports for InterconectaR
+#' Global variables and imports for InterconectaR
 #'
-#' @importFrom grDevices as.raster colorRamp colorRampPalette dev.off heat.colors jpeg pdf png rainbow rgb terrain.colors
+#' @noRd
+#' @importFrom grDevices as.raster col2rgb colorRamp colorRampPalette dev.off heat.colors jpeg pdf png rainbow rgb terrain.colors
 #' @importFrom graphics par
 #' @importFrom stats cor cov2cor end median na.omit prcomp predict promax sd setNames start
 #' @importFrom utils head modifyList tail
@@ -18,7 +18,7 @@ utils::globalVariables(c(
   "difference", "display_name", "domain", "dx", "dy",
   "end",
   "full_name",
-  "getmatrix", "graph", "group",
+  "graph", "group",
   "intensity",
   "lab", "label", "len", "lx", "ly",
   "mean_value", "measure", "metric",

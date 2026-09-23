@@ -16,18 +16,19 @@
 <p align="center">
   <img src="https://www.r-pkg.org/badges/version/InterconectaR" alt="CRAN version"/>
   <img src="https://img.shields.io/github/license/jventural/InterconectaR" alt="License"/>
-  <img src="https://img.shields.io/badge/R%20%3E%3D-4.0.0-blue" alt="R version"/>
+  <img src="https://img.shields.io/badge/R%20%3E%3D-4.1.0-blue" alt="R version"/>
 </p>
 
 ## Overview
 
-**InterconectaR** provides an integrated toolkit for network analysis and psychometric modeling. It includes 40 functions organized around five core areas:
+**InterconectaR** provides an integrated toolkit for network analysis and psychometric modeling. It includes 49 functions organized around six core areas:
 
 - **Network Estimation** -- Estimate and compare networks across groups using multiple methods
 - **Centrality & Bridge Analysis** -- Calculate, compare, and visualize centrality and bridge metrics
 - **Advanced Visualization** -- Publication-ready plots for networks, centrality indices, and SEM diagrams
 - **Community Detection (EGA)** -- Exploratory Graph Analysis workflows with stability refinement
 - **Model Evaluation & Stability** -- Bootstrap diagnostics, case-dropping stability, and performance metrics
+- **Sample Size Planning** -- Monte Carlo sample size for EGA and an interactive application for network designs
 
 ## Installation
 
@@ -109,6 +110,18 @@ remotes::install_github("jventural/InterconectaR")
 | `choose_best_method()` | Select the best estimation method based on correlation analysis |
 | `structure_groups()` | Structure group labels for network communities |
 
+### Sample Size Planning for EGA
+
+| Function | Description |
+|---|---|
+| `sample_size_EGA_montecarlo()` | A priori sample size for EGA through Monte Carlo simulation |
+| `sample_size_EGA_control()` | Advanced settings of the simulation (targets, thresholds, algorithm) |
+| `make_likert_thresholds()` | Likert thresholds with floor or ceiling effects for the simulated items |
+| `plot_sample_size_EGA_montecarlo()` | Recovery metrics across the candidate sample sizes |
+| `plot_power_curve_ci()` | Power curve with its bootstrap band and the recommended n |
+| `plot_failure_decomposition()` | Which constraint fails at each sample size |
+| `show_recommendation()`, `show_plots()` | One-line recommendation and the stored plots |
+
 ### Interactive Application
 
 | Function | Description |
@@ -119,6 +132,9 @@ remotes::install_github("jventural/InterconectaR")
 InterconectaR::run_netpowerlab()
 ```
 
+SemPowerLab, the companion application for designs with latent variables, is part of the
+[PsyMetricTools](https://github.com/jventural/PsyMetricTools) package (`run_sempowerlab()`).
+
 The reference network is declared block by block, one block per instrument, and acts as the
 effect size of the design. The app reports what is recovered at each sample size (sensitivity,
 specificity and the correlation between estimated and true weights), recommends the sample size
@@ -128,27 +144,49 @@ required: `install.packages(c("shiny", "bslib", "powerly"))`.
 
 ## Examples
 
-### Estimate and visualize networks by group
+The examples use simulated data: eight items that measure two correlated factors, answered by
+two groups.
 
 ```r
 library(InterconectaR)
 
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+items$sex <- rep(c("Female", "Male"), each = n / 2)
+```
+
+### Estimate and visualize networks by group
+
+```r
 # Estimate networks for each group
 nets <- estimate_networks_by_group(
-  data = my_data,
-  group_var = "group",
-  columns = item_cols,
+  data = items,
+  group_var = "sex",
+  columns = names(items)[1:8],
   default = "EBICglasso"
 )
 
-# Visualize combined network and centrality panel
+# Network of one group with its centrality plot
+net <- nets$Female
+g <- qgraph::qgraph(net$graph, DoNotPlot = TRUE)
+cent <- centrality_plots2(g, net,
+                          groups = rep(c("A", "B"), each = 4),
+                          measure1 = "Bridge Expected Influence (1-step)")
+r2 <- mgm_error_metrics(items[items$sex == "Female", 1:8],
+                        type = rep("g", 8), level = rep(1, 8))$R2
+
 combine_graphs_centrality(
-  Figura1_Derecha = centrality_plot,
-  network = nets[[1]]$network,
-  groups = community_groups,
-  error_Model = error_model,
-  ncol = 2,
-  widths = c(0.50, 0.60)
+  Figura1_Derecha = cent$plot,
+  network = net,
+  groups = list(A = 1:4, B = 5:8),
+  error_Model = r2
 )
 ```
 
@@ -157,10 +195,10 @@ combine_graphs_centrality(
 ```r
 # Bridge centrality comparison
 centrality_bridge_plot(
-  networks_groups = list(group1_net, group2_net),
-  group_names = c("Group 1", "Group 2"),
+  networks_groups = nets,
+  group_names = c("Female", "Male"),
   measure = "Bridge Expected Influence (1-step)",
-  communities = community_list
+  communities = rep(c("A", "B"), each = 4)
 )
 ```
 
@@ -168,11 +206,26 @@ centrality_bridge_plot(
 
 ```r
 results <- compute_netScores(
-  item_prefixes = c("dep", "anx"),
-  data = my_data,
+  item_prefixes = c("A", "B"),
+  data = items,
   stability_threshold = 0.70,
-  stability_iter = 500
+  stability_iter = 500,
+  rename_dims = FALSE
 )
+```
+
+### A priori sample size for EGA
+
+```r
+res <- sample_size_EGA_montecarlo(
+  community_sizes = c(4, 4),
+  within_edge = 0.20,
+  sample_sizes = c(150, 250, 400, 600),
+  n_rep = 500,
+  seed = 2026
+)
+res
+plot_power_curve_ci(res)
 ```
 
 ## Citation

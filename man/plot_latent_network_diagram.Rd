@@ -7,7 +7,7 @@
 plot_latent_network_diagram(
   model_object,
   filename,
-  output_path = ".",
+  output_path = NULL,
   width = 9.5,
   height = 6.5,
   resolution = 1500,
@@ -22,11 +22,14 @@ plot_latent_network_diagram(
 )
 }
 \arguments{
-\item{model_object}{A model object (psychonetrics, lavaan, or similar).}
+\item{model_object}{A fitted model: a \code{lavaan} object or a \code{psychonetrics}
+latent variable model (the latter needs the psychonetrics package).}
 
 \item{filename}{Output filename (with extension .png, .jpg, or .pdf).}
 
-\item{output_path}{Directory for output file (default: ".").}
+\item{output_path}{Directory where the file is written. It has no default,
+so nothing is written unless you choose a location (use \code{tempdir()} for a
+temporary one).}
 
 \item{width}{Plot width in inches.}
 
@@ -46,13 +49,33 @@ plot_latent_network_diagram(
 
 \item{edge_settings}{Optional list of edge display settings.}
 
-\item{save_message}{Logical; print save message (default: TRUE).}
+\item{save_message}{Logical; report the path of the saved file as a
+message (default: TRUE).}
 
 \item{show_manifest}{Logical; show manifest variables (default: TRUE).}
 }
 \value{
-Invisibly, NULL. Side effect: saves a plot to disk.
+Invisibly, the path of the saved file. Called for its side effect:
+the diagram is written to \code{file.path(output_path, filename)}.
 }
 \description{
 Plot a latent network diagram (SEM path diagram)
+}
+\examples{
+\donttest{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+fit <- lavaan::cfa("F1 =~ A1 + A2 + A3 + A4
+                    F2 =~ B1 + B2 + B3 + B4", data = items)
+plot_latent_network_diagram(fit, filename = "diagram.png",
+                            output_path = tempdir(), resolution = 100)
+}
 }

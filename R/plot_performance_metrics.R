@@ -4,6 +4,24 @@
 #' @param averaged_results Data frame with averaged metrics from summary_metrics.
 #' @return A ggplot object with performance comparison.
 #' @export
+#' @examples
+#' # A small table with the structure returned by boot_and_evaluate()
+#' set.seed(1)
+#' res <- expand.grid(Algorithm = c("louvain", "walktrap"),
+#'                    Correlation_Method = c("pearson", "spearman"),
+#'                    Sample_Size = c(100, 250, 500), Simulation = 1:5,
+#'                    stringsAsFactors = FALSE)
+#' k <- nrow(res)
+#' res$sensitivity <- runif(k, 0.6, 0.9)
+#' res$specificity <- runif(k, 0.7, 0.95)
+#' res$precision <- runif(k, 0.6, 0.9)
+#' res$correlation <- runif(k, 0.7, 0.95)
+#' res$abs_cor <- runif(k, 0.7, 0.95)
+#' res$bias <- runif(k, 0.01, 0.05)
+#' res$TEFI <- rnorm(k, -5, 0.3)
+#' res$FDR <- runif(k, 0.05, 0.2)
+#'
+#' plot_performance_metrics(summary_metrics(res))
 #' @importFrom dplyr %>%
 #' @importFrom tidyr pivot_longer
 #' @importFrom ggplot2 ggplot aes geom_line labs facet_grid vars theme_minimal theme element_text scale_color_brewer
@@ -14,7 +32,7 @@ plot_performance_metrics <- function(averaged_results) {
 
   # Crear el grafico
   plot <- ggplot2::ggplot(data_long, ggplot2::aes(x = Sample_Size, y = Value, color = Correlation_Method)) +
-    ggplot2::geom_line(ggplot2::aes(linetype = Correlation_Method), size = 0.8) +
+    ggplot2::geom_line(ggplot2::aes(linetype = Correlation_Method), linewidth = 0.8) +
     ggplot2::labs(
       title = "Comparison of Performance Metrics by Algorithm and Correlation Method",
       x = "Sample Size",

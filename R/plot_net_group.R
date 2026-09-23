@@ -14,6 +14,8 @@
 #' @param full_labels Optional character vector of full names for the caption legend.
 #' @param groups_list Named list mapping domain names to node indices.
 #' @param group_cols Named character vector of colors per domain.
+#' @param palette Wes Anderson palette used when \code{group_cols} or edge
+#'   colors are not supplied.
 #' @param node_radius Numeric radius of node circles.
 #' @param node_label_size Text size for node labels (NULL = auto).
 #' @param ring_offset Gap between node circle and R2 ring.
@@ -39,27 +41,42 @@
 #' @param R2_position Position of R2 text: "below", "above", "right", "left".
 #' @param title Optional plot title.
 #' @param subtitle Optional plot subtitle.
-#' @param caption Caption text (default explains R2 ring).
+#' @param caption Caption text. '"default"' explains the R2 ring;
+#'   'NULL' removes the caption.
 #'
 #' @return A ggplot object.
 #' @export
 #' @importFrom dplyr %>% tibble filter mutate left_join rename select transmute bind_rows
 #' @importFrom purrr imap_dfr
-#' @importFrom ggplot2 ggplot aes geom_curve geom_segment scale_size geom_point scale_color_manual guides guide_legend scale_fill_manual geom_text geom_label coord_equal theme_void theme labs element_text facet_wrap annotation_custom
+#' @importFrom ggplot2 ggplot aes geom_curve geom_segment scale_linewidth geom_point scale_color_manual guides guide_legend scale_fill_manual geom_text geom_label coord_equal theme_void theme labs element_text facet_wrap annotation_custom
 #' @importFrom ggforce geom_circle geom_arc
 #' @importFrom qgraph averageLayout
 #' @importFrom grid unit
 #'
 #' @examples
-#' \dontrun{
-#' plot_net_group(
-#'   mat1 = net_fem$graph, mat2 = net_masc$graph,
-#'   r2_1 = r2_fem, r2_2 = r2_masc,
-#'   labels = colnames(net_fem$graph),
-#'   short_labels = c("AE","HZ","CT"),
-#'   full_labels  = c("Agotamiento Emocional","Hartazgo","Contraste")
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
 #' )
-#' }
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#' sex <- rep(c("Female", "Male"), each = n / 2)
+#'
+#' net_f <- bootnet::estimateNetwork(items[sex == "Female", ], default = "EBICglasso")
+#' net_m <- bootnet::estimateNetwork(items[sex == "Male", ], default = "EBICglasso")
+#' r2_f <- mgm_error_metrics(items[sex == "Female", ], type = rep("g", 8),
+#'                           level = rep(1, 8))$R2
+#' r2_m <- mgm_error_metrics(items[sex == "Male", ], type = rep("g", 8),
+#'                           level = rep(1, 8))$R2
+#' plot_net_group(
+#'   mat1 = net_f$graph, mat2 = net_m$graph,
+#'   r2_1 = r2_f, r2_2 = r2_m,
+#'   group_names = c("Female", "Male"),
+#'   groups_list = list(Anxiety = 1:4, Depression = 5:8)
+#' )
 plot_net_group <- function(
     mat1, mat2,
     r2_1, r2_2,
@@ -95,11 +112,14 @@ plot_net_group <- function(
     R2_position    = "below",
     title    = NULL,
     subtitle = NULL,
-    caption  = "Anillo exterior: proporci\u00f3n de varianza explicada (R\u00b2)"
+    caption  = "default"
 ){
 
   stopifnot(all(dim(mat1) == dim(mat2)))
   if (is.null(labels)) labels <- colnames(mat1)
+  if (identical(caption, "default")) {
+    caption <- "Anillo exterior: proporci\u00f3n de varianza explicada (R\u00b2)"
+  }
 
   # --- Auto-generar colores de nodos y aristas desde la paleta ---------------
   needs_node_cols <- is.null(group_cols)
@@ -259,20 +279,20 @@ plot_net_group <- function(
     if (edge_curvature != 0) {
       p <- p + ggplot2::geom_curve(
         data = edges,
-        ggplot2::aes(x=x, y=y, xend=xend, yend=yend, size=abs_w),
+        ggplot2::aes(x=x, y=y, xend=xend, yend=yend, linewidth=abs_w),
         color = edges$edge_col, alpha = edges$edge_alpha,
         curvature = edge_curvature, lineend = "round", ncp = 15)
     } else {
       p <- p + ggplot2::geom_segment(
         data = edges,
-        ggplot2::aes(x=x, y=y, xend=xend, yend=yend, size=abs_w),
+        ggplot2::aes(x=x, y=y, xend=xend, yend=yend, linewidth=abs_w),
         color = edges$edge_col, alpha = edges$edge_alpha,
         lineend = "round")
     }
   }
 
   p <- p +
-    ggplot2::scale_size(range=lwd_range, limits=c(0, maxW), guide="none") +
+    ggplot2::scale_linewidth(range=lwd_range, limits=c(0, maxW), guide="none") +
     ggplot2::geom_point(data = data.frame(x=Inf, y=Inf,
                                           tipo=c("Positiva","Negativa")),
                         ggplot2::aes(x=x, y=y, color=tipo), size=0, stroke=0) +

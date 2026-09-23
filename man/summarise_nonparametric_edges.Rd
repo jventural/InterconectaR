@@ -26,3 +26,20 @@ A data frame with edge bootstrap summary statistics.
 \description{
 Summarises nonparametric bootstrap results for network edges from bootnet.
 }
+\examples{
+\donttest{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+edge_boot <- bootnet::bootnet(net, nBoots = 20, nCores = 1, verbose = FALSE)
+summarise_nonparametric_edges(edge_boot)
+}
+}

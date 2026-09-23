@@ -31,12 +31,13 @@
 #'   networks and their accuracy: A tutorial paper. *Behavior Research Methods,
 #'   50*(1), 195-212. \doi{10.3758/s13428-017-0862-1}
 #' @examples
-#' \dontrun{
-#' # opens the app in the browser
-#' run_netpowerlab()
+#' # The application only runs in an interactive session
+#' if (interactive()) {
+#'   # opens the app in the browser
+#'   run_netpowerlab()
 #'
-#' # on a fixed port, without opening a browser window
-#' run_netpowerlab(launch.browser = FALSE, port = 7799)
+#'   # on a fixed port, without opening a browser window
+#'   run_netpowerlab(launch.browser = FALSE, port = 7799)
 #' }
 #' @export
 run_netpowerlab <- function(launch.browser = TRUE, port = NULL, ...) {

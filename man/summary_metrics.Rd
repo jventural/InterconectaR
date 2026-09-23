@@ -16,3 +16,22 @@ A data frame with averaged metrics.
 Calculates median values of network performance metrics
 grouped by algorithm, correlation method, and sample size.
 }
+\examples{
+# A small table with the structure returned by boot_and_evaluate()
+set.seed(1)
+res <- expand.grid(Algorithm = c("louvain", "walktrap"),
+                   Correlation_Method = c("pearson", "spearman"),
+                   Sample_Size = c(100, 250, 500), Simulation = 1:5,
+                   stringsAsFactors = FALSE)
+k <- nrow(res)
+res$sensitivity <- runif(k, 0.6, 0.9)
+res$specificity <- runif(k, 0.7, 0.95)
+res$precision <- runif(k, 0.6, 0.9)
+res$correlation <- runif(k, 0.7, 0.95)
+res$abs_cor <- runif(k, 0.7, 0.95)
+res$bias <- runif(k, 0.01, 0.05)
+res$TEFI <- rnorm(k, -5, 0.3)
+res$FDR <- runif(k, 0.05, 0.2)
+
+summary_metrics(res)
+}

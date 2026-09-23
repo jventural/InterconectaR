@@ -1,22 +1,27 @@
 Package: InterconectaR
 Version: 1.0.1
-Date: 2024-12-05
+Date: 2026-09-23
 Title: Tools for Network Analysis and Psychometric Insights
 Encoding: UTF-8
 Authors@R: person("José", "Ventura-León",
                   email = "jventuraleon@gmail.com",
                   role = c("aut", "cre"),
                   comment = c(ORCID = "0000-0003-2996-4244"))
-Depends: R (>= 4.0.0)
-Description: A comprehensive package designed to facilitate network analysis
-    and psychometric modeling in social sciences. It includes tools for
-    constructing and analyzing psychological networks, calculating centrality
-    and bridge metrics, and visualizing community structures. The package is
-    optimized for comparing networks across groups and integrates advanced
-    visualization techniques, making it ideal for educational, psychological,
-    and social research.
+Depends: R (>= 4.1.0)
+Description: Provides tools for psychological network analysis and
+    psychometric modeling in the social sciences. It estimates networks by
+    group, summarises centrality and bridge centrality indices, evaluates
+    the stability of edges and centrality from bootstrap results, refines
+    items by the stability of exploratory graph analysis (EGA), and plots
+    networks with the variance explained of each node. It also estimates
+    an a priori sample size for EGA through Monte Carlo simulation and
+    includes an interactive application to plan the sample size of a
+    network study. Methods follow Epskamp, Borsboom
+    and Fried (2018) <doi:10.3758/s13428-017-0862-1> and Golino and
+    Epskamp (2017) <doi:10.1371/journal.pone.0174035>.
 License: GPL (>= 3)
 URL: https://github.com/jventural/InterconectaR
+BugReports: https://github.com/jventural/InterconectaR/issues
 Imports:
     bootnet,
     Cairo,
@@ -28,8 +33,9 @@ Imports:
     future,
     future.apply,
     ggforce,
-    ggplot2,
+    ggplot2 (>= 3.4.0),
     ggplotify,
+    graphics,
     grDevices,
     grid,
     gridExtra,
@@ -43,21 +49,22 @@ Imports:
     purrr,
     qgraph,
     RColorBrewer,
-    reshape2,
     rlang,
     scales,
     semPlot,
-    stringr,
+    stats,
     tibble,
     tidyr,
     tidyselect,
-    viridis,
+    tools,
+    utils,
     wesanderson
 Suggests:
     bslib,
     powerly,
-    semPower,
-    shiny
+    psychonetrics,
+    shiny,
+    viridis
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 NeedsCompilation: no

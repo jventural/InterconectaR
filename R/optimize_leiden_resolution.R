@@ -8,7 +8,28 @@
 #' @param objective_function Leiden objective function (default: "CPM").
 #' @param verbose Logical; print progress messages.
 #'
+#' @return A list with `best_gamma` (the resolution with the lowest TEFI),
+#'   `max_valid_gamma` (the largest resolution tested before TEFI became
+#'   undefined), `best_model` (the EGA object for `best_gamma`),
+#'   `all_results` (the EGA objects of the valid resolutions), `comparison`
+#'   (a data frame with the TEFI and number of communities per resolution) and
+#'   `optimization_plot` (a ggplot of TEFI against gamma).
 #' @export
+#' @examples
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' opt <- optimize_leiden_resolution(items, corr = "pearson",
+#'                                   gamma_values = c(0.05, 0.1, 0.5),
+#'                                   verbose = FALSE)
+#' opt$comparison
 #' @importFrom EGAnet EGA
 #' @importFrom ggplot2 ggplot aes geom_line geom_point labs theme_minimal
 optimize_leiden_resolution <- function(data,
@@ -23,7 +44,9 @@ optimize_leiden_resolution <- function(data,
 
   # Almacenar resultados
   results <- list()
-  tefi_values <- numeric(length(gamma_values))
+  # NA (not 0) marks the resolutions that were never tested: after an early
+  # break they must not look like valid TEFI values
+  tefi_values <- rep(NA_real_, length(gamma_values))
   names(tefi_values) <- as.character(gamma_values)
 
   # Variable para determinar el gamma maximo con TEFI valido
@@ -61,7 +84,7 @@ optimize_leiden_resolution <- function(data,
 
     # Verificar si el TEFI es NaN
     if (is.nan(tefi_values[i])) {
-      if (is.na(max_valid_gamma)) {
+      if (is.na(max_valid_gamma) && i > 1) {
         max_valid_gamma <- gamma_values[i - 1] # Guardar el ultimo gamma valido
       }
       if (verbose) message("TEFI no v\u00e1lido (NaN) para gamma = ", current_gamma)
@@ -85,12 +108,15 @@ optimize_leiden_resolution <- function(data,
   best_gamma <- gamma_values[valid_indices][best_index]
   best_model <- results[[as.character(best_gamma)]]
 
+  # 'results' only holds the resolutions that ran, so it is indexed by name
+  valid_results <- results[as.character(gamma_values[valid_indices])]
+
   # Crear dataframe comparativo
   comparison_df <- data.frame(
     gamma = gamma_values[valid_indices],
     TEFI = tefi_values[valid_indices],
-    n_communities = sapply(results[valid_indices], function(x) if (!is.null(x)) x$n.dim else NA),
-    convergence = sapply(results[valid_indices], function(x) !is.null(x))
+    n_communities = vapply(valid_results, function(x) if (!is.null(x)) as.numeric(x$n.dim) else NA_real_, numeric(1)),
+    convergence = vapply(valid_results, function(x) !is.null(x), logical(1))
   )
 
   # Resultado final
@@ -98,7 +124,7 @@ optimize_leiden_resolution <- function(data,
     best_gamma = best_gamma,
     max_valid_gamma = max_valid_gamma,
     best_model = best_model,
-    all_results = results[valid_indices],
+    all_results = valid_results,
     comparison = comparison_df,
     optimization_plot = ggplot2::ggplot(comparison_df, ggplot2::aes(x = gamma, y = TEFI)) +
       ggplot2::geom_line(color = "steelblue") +

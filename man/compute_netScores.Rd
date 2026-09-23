@@ -15,12 +15,13 @@ compute_netScores(
   stability_model = "glasso",
   stability_algorithm = "louvain",
   stability_iter = 1000,
-  stability_seed_start = 2025,
+  stability_seed_start = NULL,
   stability_type = "resampling",
-  stability_ncores = 11,
+  stability_ncores = 2,
   stability_max_iter = 10,
   stability_plot = TRUE,
-  ega_plot = TRUE
+  ega_plot = TRUE,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -28,7 +29,9 @@ compute_netScores(
 
 \item{data}{Data frame with item responses.}
 
-\item{rename_dims}{Logical; interactively rename dimensions.}
+\item{rename_dims}{Logical; ask for a name for each dimension. The prompt
+only appears in interactive sessions; otherwise, or when \code{FALSE}, the
+default names are used.}
 
 \item{custom_names}{Optional named list of dimension names.}
 
@@ -44,18 +47,48 @@ compute_netScores(
 
 \item{stability_iter}{Number of bootstrap iterations.}
 
-\item{stability_seed_start}{Starting random seed.}
+\item{stability_seed_start}{Optional starting random seed (see
+\code{\link[=refine_items_by_stability]{refine_items_by_stability()}}). \code{NULL} (default) leaves the seed to
+\code{EGAnet::bootEGA()}.}
 
 \item{stability_type}{Bootstrap type.}
 
-\item{stability_ncores}{Number of CPU cores.}
+\item{stability_ncores}{Number of CPU cores (default 2).}
 
 \item{stability_max_iter}{Maximum refinement iterations.}
 
 \item{stability_plot}{Logical; plot item stability.}
 
 \item{ega_plot}{Logical; plot EGA results.}
+
+\item{verbose}{Logical; report the progress of each step as messages.}
+}
+\value{
+A list of class \code{ega_network_scores} with \code{data_complete} (the
+data with the network scores and sums appended), \code{net_scores},
+\code{dimension_sums}, \code{dimensions_list}, \code{dimension_names}, \code{ega_objects},
+\code{scale_columns}, \code{stability_results} and \code{removed_items}.
 }
 \description{
 Computes network scores with stability analysis using EGA.
+}
+\examples{
+\donttest{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("SC", 1:4), paste0("SC", 5:8))
+
+scores <- compute_netScores("SC", items, rename_dims = FALSE,
+                            stability_corr = "pearson",
+                            stability_iter = 20, stability_seed_start = 1,
+                            stability_ncores = 1, stability_plot = FALSE,
+                            ega_plot = FALSE)
+head(scores$net_scores)
+}
 }

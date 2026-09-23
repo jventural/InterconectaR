@@ -4,6 +4,11 @@
 #' @param r_matrix Square correlation matrix.
 #' @return A list with the best method name and details.
 #' @export
+#' @examples
+#' r <- matrix(c(1, 0.40, 0.35,
+#'               0.40, 1, 0.30,
+#'               0.35, 0.30, 1), nrow = 3)
+#' choose_best_method(n = 250, r_matrix = r)
 choose_best_method <- function(n, r_matrix) {
   # Verifica si la matriz es valida
   if (!is.matrix(r_matrix) || nrow(r_matrix) != ncol(r_matrix)) {

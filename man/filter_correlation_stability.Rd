@@ -7,8 +7,35 @@
 filter_correlation_stability(caseDroppingBoot)
 }
 \arguments{
-\item{caseDroppingBoot}{Bootstrap results from bootnet case-dropping.}
+\item{caseDroppingBoot}{Case-dropping bootstrap results from
+\code{bootnet::bootnet(..., type = "case")}, computed with the statistics
+\code{"strength"}, \code{"expectedInfluence"}, \code{"bridgeStrength"} and
+\code{"bridgeExpectedInfluence"} (or a subset of them).}
+}
+\value{
+A data frame with the columns \code{rowname} (the centrality index) and
+\code{Index} (its correlation stability coefficient, CS, rounded to two
+decimals).
 }
 \description{
 Extracts and filters correlation stability indices from bootstrap results.
+}
+\examples{
+\donttest{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+case_boot <- bootnet::bootnet(net, nBoots = 20, type = "case",
+                              statistics = c("strength", "expectedInfluence"),
+                              nCores = 1, verbose = FALSE)
+filter_correlation_stability(case_boot)
+}
 }

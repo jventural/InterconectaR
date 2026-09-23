@@ -8,7 +8,8 @@ plot_centrality_stability(
   caseDroppingBoot,
   nonParametricBoot,
   statistics = "bridgeStrength",
-  labels = FALSE
+  labels = FALSE,
+  color_palette = NULL
 )
 }
 \arguments{
@@ -19,10 +20,35 @@ plot_centrality_stability(
 \item{statistics}{Character string specifying the statistic (default: "bridgeStrength").}
 
 \item{labels}{Logical; whether to show labels (default: FALSE).}
+
+\item{color_palette}{Optional character vector of colors for the statistics.
+If NULL (default), uses bootnet's default colors. Length should match
+the number of statistics being plotted.}
 }
 \value{
 A combined patchwork plot object.
 }
 \description{
 Plot centrality stability diagnostics
+}
+\examples{
+\donttest{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+case_boot <- bootnet::bootnet(net, nBoots = 20, type = "case",
+                              statistics = c("bridgeStrength", "strength"),
+                              communities = rep(c("A", "B"), each = 4),
+                              nCores = 1, verbose = FALSE)
+edge_boot <- bootnet::bootnet(net, nBoots = 20, nCores = 1, verbose = FALSE)
+plot_centrality_stability(case_boot, edge_boot)
+}
 }

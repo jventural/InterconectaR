@@ -11,14 +11,32 @@
 #' @param use_abbrev Logical; use abbreviated node names.
 #' @param labels Optional character vector of custom node labels.
 #'
+#' @return A list with `table` (a data frame with the centrality values of
+#'   each node) and `plot` (a ggplot object).
 #' @export
+#' @examples
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+#' g <- qgraph::qgraph(net$graph, DoNotPlot = TRUE)
+#' res <- centrality_duo_plot(g, net,
+#'                            groups = rep(c("A", "B"), each = 4),
+#'                            measure1 = "Bridge Expected Influence (1-step)")
+#' res$plot
 #' @importFrom qgraph centralityTable
 #' @importFrom dplyr %>% filter select arrange rename mutate inner_join bind_cols desc
 #' @importFrom networktools bridge
 #' @importFrom tibble tibble
 #' @importFrom ggplot2 ggplot aes geom_point geom_line scale_color_manual labs theme_minimal theme element_text element_rect element_line
 #' @importFrom tidyr pivot_longer
-#' @importFrom stringr str_detect
 #' @importFrom forcats fct_reorder
 #' @importFrom purrr map
 #' @importFrom rlang quo sym !! :=
@@ -168,7 +186,7 @@ centrality_duo_plot <- function(qgraph_obj,
   }
 
   # --- Generar grafico con dos medidas ---
-  if (!is.null(measure1) && !is.null(label1) && exists("cents2")) {
+  if (!is.null(measure1) && !is.null(label1) && exists("cents2", inherits = FALSE)) {
     y_var     <- if (use_abbrev) quo(Abrev) else quo(full_name)
 
     # Transformar a formato largo para ggplot
@@ -207,15 +225,12 @@ centrality_duo_plot <- function(qgraph_obj,
         legend.title = element_text(size = 12, face = "bold"),
         legend.position = "bottom",
         panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
-        panel.grid.minor = element_line(color = "grey95", size = 0.3),
+        panel.grid.minor = element_line(color = "grey95", linewidth = 0.3),
         plot.background = element_rect(fill = "white", color = NA)
       )
 
     # Suprimir warnings al imprimir
     class(Figura) <- c("silent_gg", class(Figura))
-    assign("print.silent_gg",
-           function(x, ...) suppressWarnings(NextMethod()),
-           envir = .GlobalEnv)
 
     return(list(
       table = cents2 %>% arrange(desc(!!sym(measure0))),
@@ -236,7 +251,7 @@ centrality_duo_plot <- function(qgraph_obj,
                      aes(x = Value,
                          y = fct_reorder(!!y_var, Value),
                          group = 1)) +
-      geom_line(color = pal_single, size = 1.2, alpha = 0.7) +
+      geom_line(color = pal_single, linewidth = 1.2, alpha = 0.7) +
       geom_point(color = pal_single, size = 4, alpha = 0.8) +
       theme_minimal() +
       labs(x = "z-score", y = "Nodos", color = "M\u00e9trica") +
@@ -252,16 +267,13 @@ centrality_duo_plot <- function(qgraph_obj,
         legend.text  = element_text(size = 12),
         legend.title = element_text(size = 12, face = "bold"),
         legend.position = "bottom",
-        panel.grid.major = element_line(color = "grey90", size = 0.5),
-        panel.grid.minor = element_line(color = "grey95", size = 0.3),
+        panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
+        panel.grid.minor = element_line(color = "grey95", linewidth = 0.3),
         plot.background = element_rect(fill = "white", color = NA)
       )
 
     # Suprimir warnings al imprimir
     class(Figura) <- c("silent_gg", class(Figura))
-    assign("print.silent_gg",
-           function(x, ...) suppressWarnings(NextMethod()),
-           envir = .GlobalEnv)
 
     return(list(table = cents_single, plot = Figura))
   }

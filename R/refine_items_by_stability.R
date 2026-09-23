@@ -6,14 +6,33 @@
 #' @param model Network model (default: "glasso").
 #' @param algorithm Community detection algorithm (default: "louvain").
 #' @param iter Number of bootstrap iterations (default: 1000).
-#' @param seed_start Starting seed value (default: 2025).
+#' @param seed_start Optional starting seed. When supplied, refinement round
+#'   `i` uses the seed `seed_start + i - 1`, which makes the results
+#'   reproducible. `NULL` (default) leaves the seed to `EGAnet::bootEGA()`.
 #' @param type Bootstrap type (default: "resampling").
-#' @param ncores Number of cores for parallel processing (default: 11).
+#' @param ncores Number of cores for parallel processing (default: 2).
 #' @param max_iter Maximum number of refinement iterations (default: 10).
 #' @param plot.itemStability Logical; plot item stability (default: FALSE).
 #'
 #' @return A list containing the final bootstrap result, stability data, removed items, plots, and dimension consistency tables.
 #' @export
+#' @examples
+#' \donttest{
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' refined <- refine_items_by_stability(items, corr = "pearson", iter = 20,
+#'                                      seed_start = 1, ncores = 1)
+#' refined$stability_df
+#' refined$removed_items
+#' }
 #' @importFrom EGAnet bootEGA
 #' @importFrom ggplot2 ggtitle theme element_text
 #' @importFrom patchwork plot_layout
@@ -26,9 +45,9 @@ refine_items_by_stability <- function(
     model        = "glasso",
     algorithm    = "louvain",
     iter         = 1000,
-    seed_start   = 2025,
+    seed_start   = NULL,
     type         = "resampling",
-    ncores       = 11,
+    ncores       = 2,
     max_iter     = 10,
     plot.itemStability = FALSE
 ) {
@@ -40,9 +59,9 @@ refine_items_by_stability <- function(
   item_dimensions  <- list()
 
   for (i in seq_len(max_iter)) {
-    seed <- seed_start + i - 1
-    message(sprintf("Iteraci\u00f3n %d (seed = %d): %d \u00edtems en an\u00e1lisis ...",
-                    i, seed, ncol(current_data)))
+    seed <- if (is.null(seed_start)) NULL else seed_start + i - 1
+    message(sprintf("Iteraci\u00f3n %d (seed = %s): %d \u00edtems en an\u00e1lisis ...",
+                    i, if (is.null(seed)) "NULL" else format(seed), ncol(current_data)))
 
     # --- 1) Ejecutar bootEGA ---
     boot.emat <- bootEGA(

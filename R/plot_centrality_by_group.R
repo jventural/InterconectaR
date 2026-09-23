@@ -7,6 +7,24 @@
 #'
 #' @return A list with elements \code{plot} (a ggplot object) and \code{table} (a data frame).
 #' @export
+#' @examples
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#' items$sex <- rep(c("Female", "Male"), each = n / 2)
+#'
+#' nets <- estimate_networks_by_group(items, group_var = "sex",
+#'                                    columns = names(items)[1:8],
+#'                                    default = "EBICglasso")
+#' res <- plot_centrality_by_group(nets, replacements = c("Female", "Male"),
+#'                                 measure_spec = "ExpectedInfluence")
+#' res$plot
 #' @importFrom dplyr %>% rename mutate case_when select filter group_by summarise arrange pull
 #' @importFrom ggplot2 ggplot aes geom_line geom_point scale_shape_manual scale_color_manual xlab ylab theme_bw coord_flip labs theme element_text element_blank
 #' @importFrom forcats fct_reorder

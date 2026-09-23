@@ -1,28 +1,54 @@
 #' @title Bootstrap and Evaluate Network Analysis
 #' @description Performs bootstrap evaluation of network analysis algorithms.
 #' @param data Data frame with the data.
-#' @param true_network True network object for comparison.
+#' @param true_network Reference network used as the truth: an object returned
+#'   by `EGAnet::EGA()` (its `network` element is compared with each estimate).
 #' @param algorithms Vector of algorithm names to evaluate.
 #' @param correlation_methods Vector of correlation methods.
 #' @param sample_sizes Vector of sample sizes to test (default c(100, 250, 500, 1000)).
 #' @param n_simulations Number of simulations (default 100).
-#' @param seed Random seed (default 123).
-#' @param n_cores Number of cores for parallel processing (default 4).
+#' @param seed Optional random seed for reproducible results. `NULL` (default)
+#'   leaves the random number generator untouched.
+#' @param n_cores Number of cores for parallel processing (default 2). With
+#'   `n_cores = 1` the simulations run sequentially.
 #' @return Data frame with performance metrics.
 #' @export
 #' @importFrom EGAnet EGA
 #' @importFrom future plan multisession
 #' @importFrom future.apply future_lapply
-#' @importFrom progressr handlers with_progress progressor
+#' @importFrom progressr with_progress progressor
 #' @importFrom dplyr bind_rows
+#' @examples
+#' \donttest{
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' true_net <- EGAnet::EGA(items, plot.EGA = FALSE)
+#' res <- boot_and_evaluate(items, true_network = true_net,
+#'                          algorithms = "walktrap",
+#'                          correlation_methods = "pearson",
+#'                          sample_sizes = c(100, 200),
+#'                          n_simulations = 2, seed = 1, n_cores = 1)
+#' head(res)
+#' }
 boot_and_evaluate <- function(data, true_network, algorithms, correlation_methods,
-                              sample_sizes = c(100, 250, 500, 1000), n_simulations = 100, seed = 123, n_cores = 4) {
+                              sample_sizes = c(100, 250, 500, 1000), n_simulations = 100,
+                              seed = NULL, n_cores = 2) {
 
-  # Configura el entorno paralelo
-  future::plan(future::multisession, workers = n_cores)
-
-  # Define un handler para la barra de progreso
-  progressr::handlers(global = TRUE)
+  # Configura el entorno paralelo y restaura el plan del usuario al salir
+  old_plan <- if (n_cores > 1) {
+    future::plan(future::multisession, workers = n_cores)
+  } else {
+    future::plan(future::sequential)
+  }
+  on.exit(future::plan(old_plan), add = TRUE)
 
   # Funciones auxiliares para calcular la correlacion y el sesgo
   cor0 <- function(matrix1, matrix2, ...) {
@@ -73,7 +99,7 @@ boot_and_evaluate <- function(data, true_network, algorithms, correlation_method
     return(results_df)
   }
 
-  set.seed(seed)
+  if (!is.null(seed)) set.seed(seed)
   results_list <- list()
 
   progressr::with_progress({
@@ -109,7 +135,7 @@ boot_and_evaluate <- function(data, true_network, algorithms, correlation_method
         }
       }
       dplyr::bind_rows(simulation_results, .id = "Model_ID")
-    })
+    }, future.seed = TRUE)
   })
 
   results_df <- dplyr::bind_rows(results_list)

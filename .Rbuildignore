@@ -11,3 +11,9 @@
 ^cran-comments\.md$
 ^test_.*\.R$
 ^InterconectaR_Logo\.jpg$
+^\.Rhistory$
+^\.RData$
+^.*\.Rcheck$
+^CRAN-SUBMISSION$
+^revdep$
+^Rplots\.pdf$

@@ -4,8 +4,16 @@
 #'
 #' @param edge.matrix Network edge matrix (e.g., from qgraph).
 #'
+#' @return A character string reporting how many edges differ from zero out
+#'   of the possible edges, and the resulting density as a percentage.
 #' @export
 #' @importFrom qgraph getWmat
+#' @examples
+#' w <- matrix(c(0, 0.3, 0,
+#'               0.3, 0, 0.2,
+#'               0, 0.2, 0), nrow = 3,
+#'             dimnames = list(c("A", "B", "C"), c("A", "B", "C")))
+#' Density_report(w)
 Density_report <- function(edge.matrix){
   n <- nrow(edge.matrix)
   Total_Density <- n*(n-1)/2

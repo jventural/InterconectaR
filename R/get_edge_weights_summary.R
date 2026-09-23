@@ -2,14 +2,30 @@
 #'
 #' Computes descriptive statistics for network edge weights.
 #'
-#' @param network Network object with a graph element.
+#' @param network Network object with a graph element (e.g., from
+#'   `bootnet::estimateNetwork()`).
 #' @param abs_weights Logical; use absolute edge weights.
 #' @param round_digits Number of decimal places for rounding.
 #'
+#' @return A one-row data frame with the number of non-zero edges (`N`) and
+#'   the mean, standard deviation, minimum and maximum of their weights.
 #' @export
 #' @importFrom qgraph getWmat
+#' @examples
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+#' get_edge_weights_summary(net)
 get_edge_weights_summary <- function(network,
-                                     abs_weights  = T,  # usar |w|?
+                                     abs_weights  = TRUE,  # usar |w|?
                                      round_digits = 2) {    # redondeo SOLO de la salida
   # --- Opciones internas (fijas) ---
   unique_edges     <- TRUE   # contar cada arista una vez (si es simetrica)

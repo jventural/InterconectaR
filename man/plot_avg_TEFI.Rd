@@ -16,3 +16,14 @@ A ggplot object showing TEFI trends.
 Plots median TEFI values across different sample sizes,
 algorithms, and correlation methods.
 }
+\examples{
+# A small table with the structure returned by boot_and_evaluate()
+set.seed(1)
+res <- expand.grid(Algorithm = c("louvain", "walktrap"),
+                   Correlation_Method = c("pearson", "spearman"),
+                   Sample_Size = c(100, 250, 500), Simulation = 1:5,
+                   stringsAsFactors = FALSE)
+res$TEFI <- rnorm(nrow(res), -5, 0.3)
+
+plot_avg_TEFI(res)
+}

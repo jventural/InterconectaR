@@ -13,7 +13,26 @@
 #' @param labels Optional custom labels for nodes.
 #' @param set_labels_on_graph Logical; apply labels to graph object.
 #'
+#' @return A named list with one estimated network (a `bootnetResult` object)
+#'   per group. Each network carries the attribute `var_mapping`, a tibble
+#'   that maps the original variable names to the labels used.
 #' @export
+#' @examples
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#' items$sex <- rep(c("Female", "Male"), each = n / 2)
+#'
+#' nets <- estimate_networks_by_group(items, group_var = "sex",
+#'                                    columns = names(items)[1:8],
+#'                                    default = "EBICglasso")
+#' names(nets)
 #' @importFrom dplyr %>%
 #' @importFrom bootnet estimateNetwork
 #' @importFrom purrr map

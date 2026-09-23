@@ -17,6 +17,25 @@ mgm_errors_groups(data, type, level, group, columns)
 
 \item{columns}{Character vector of column names to analyze.}
 }
+\value{
+A named list with one tibble per group, holding the RMSE, R2, CC
+and nCC of each variable (in the order of \code{columns}).
+}
 \description{
 Fits Mixed Graphical Models and extracts errors for each group.
+}
+\examples{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+items$sex <- rep(c("Female", "Male"), each = n / 2)
+
+mgm_errors_groups(items, type = rep("g", 8), level = rep(1, 8),
+                  group = sex, columns = names(items)[1:8])
 }

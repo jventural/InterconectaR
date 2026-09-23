@@ -6,6 +6,24 @@
 #' @param quiet Logical, suppress printing.
 #' @return A data frame with stability summary statistics.
 #' @export
+#' @examples
+#' \donttest{
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+#' case_boot <- bootnet::bootnet(net, nBoots = 20, type = "case",
+#'                               statistics = c("strength", "expectedInfluence"),
+#'                               nCores = 1, verbose = FALSE)
+#' summarise_case_drop_stability(case_boot)
+#' }
 #' @importFrom dplyr distinct select rename left_join group_by summarise mutate arrange n
 #' @importFrom rlang .data
 summarise_case_drop_stability <- function(caseDroppingBoot,

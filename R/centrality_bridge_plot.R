@@ -8,13 +8,34 @@
 #' @param color_palette Character vector of 2 colors for the groups.
 #' @param communities Community membership vector for bridge calculation.
 #'
+#' @return A list with `table` (a data frame with the bridge centrality of
+#'   each node in each group, raw and as z-scores) and `plot` (a ggplot
+#'   object).
 #' @export
+#' @examples
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#' items$sex <- rep(c("Female", "Male"), each = n / 2)
+#'
+#' nets <- estimate_networks_by_group(items, group_var = "sex",
+#'                                    columns = names(items)[1:8],
+#'                                    default = "EBICglasso")
+#' res <- centrality_bridge_plot(nets, group_names = c("Female", "Male"),
+#'                               communities = rep(c("A", "B"), each = 4))
+#' res$plot
 #' @importFrom qgraph qgraph
 #' @importFrom dplyr %>% rename_at mutate across
 #' @importFrom networktools bridge
 #' @importFrom tibble rownames_to_column
 #' @importFrom ggplot2 ggplot aes geom_line geom_point scale_shape_manual scale_color_manual xlab ylab theme_bw coord_flip labs theme element_text element_blank
-#' @importFrom reshape2 melt
+#' @importFrom tidyr pivot_longer
 #' @importFrom forcats fct_reorder
 #' @importFrom tidyselect where
 centrality_bridge_plot <- function(
@@ -39,10 +60,10 @@ centrality_bridge_plot <- function(
   centrality_data <- as.data.frame(cbind(bridge1[[measure]], bridge2[[measure]])) %>%
     rownames_to_column(var = "Symptoms") %>%
     rename_at(vars(V1, V2), ~ c(group_names[1], group_names[2])) %>%
-    reshape2::melt(id = "Symptoms") %>%
-    rename(Centrality = variable) %>%
+    tidyr::pivot_longer(-Symptoms, names_to = "Centrality", values_to = "value") %>%
+    mutate(Centrality = factor(Centrality, levels = group_names)) %>%
     mutate(zscore = scale(value)) %>%
-    mutate(across(where(is.numeric), round, 2))
+    mutate(across(where(is.numeric), ~ round(.x, 2)))
 
   # Crear el grafico combinado de centralidades puente con colores
   plot <- ggplot(centrality_data, aes(

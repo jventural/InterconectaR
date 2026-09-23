@@ -17,3 +17,7 @@ A named list of integer sequences.
 \description{
 Creates a named list of sequential integer groups.
 }
+\examples{
+# Two scales: the first four items and the next five
+structure_groups(c("Anxiety", "Depression"), c(4, 5))
+}

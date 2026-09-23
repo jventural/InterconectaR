@@ -23,6 +23,30 @@ optimize_leiden_resolution(
 
 \item{verbose}{Logical; print progress messages.}
 }
+\value{
+A list with \code{best_gamma} (the resolution with the lowest TEFI),
+\code{max_valid_gamma} (the largest resolution tested before TEFI became
+undefined), \code{best_model} (the EGA object for \code{best_gamma}),
+\code{all_results} (the EGA objects of the valid resolutions), \code{comparison}
+(a data frame with the TEFI and number of communities per resolution) and
+\code{optimization_plot} (a ggplot of TEFI against gamma).
+}
 \description{
 Optimizes the resolution parameter for Leiden community detection.
+}
+\examples{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+opt <- optimize_leiden_resolution(items, corr = "pearson",
+                                  gamma_values = c(0.05, 0.1, 0.5),
+                                  verbose = FALSE)
+opt$comparison
 }

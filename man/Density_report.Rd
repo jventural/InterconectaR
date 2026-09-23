@@ -9,6 +9,17 @@ Density_report(edge.matrix)
 \arguments{
 \item{edge.matrix}{Network edge matrix (e.g., from qgraph).}
 }
+\value{
+A character string reporting how many edges differ from zero out
+of the possible edges, and the resulting density as a percentage.
+}
 \description{
 Calculates and reports network density statistics.
+}
+\examples{
+w <- matrix(c(0, 0.3, 0,
+              0.3, 0, 0.2,
+              0, 0.2, 0), nrow = 3,
+            dimnames = list(c("A", "B", "C"), c("A", "B", "C")))
+Density_report(w)
 }

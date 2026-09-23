@@ -32,6 +32,28 @@ centrality_duo_plot(
 
 \item{labels}{Optional character vector of custom node labels.}
 }
+\value{
+A list with \code{table} (a data frame with the centrality values of
+each node) and \code{plot} (a ggplot object).
+}
 \description{
 Creates a plot comparing two centrality measures.
+}
+\examples{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+g <- qgraph::qgraph(net$graph, DoNotPlot = TRUE)
+res <- centrality_duo_plot(g, net,
+                           groups = rep(c("A", "B"), each = 4),
+                           measure1 = "Bridge Expected Influence (1-step)")
+res$plot
 }

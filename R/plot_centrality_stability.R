@@ -10,6 +10,26 @@
 #'
 #' @return A combined patchwork plot object.
 #' @export
+#' @examples
+#' \donttest{
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+#' case_boot <- bootnet::bootnet(net, nBoots = 20, type = "case",
+#'                               statistics = c("bridgeStrength", "strength"),
+#'                               communities = rep(c("A", "B"), each = 4),
+#'                               nCores = 1, verbose = FALSE)
+#' edge_boot <- bootnet::bootnet(net, nBoots = 20, nCores = 1, verbose = FALSE)
+#' plot_centrality_stability(case_boot, edge_boot)
+#' }
 #' @importFrom ggplot2 scale_y_continuous scale_color_manual scale_fill_manual
 #' @importFrom patchwork plot_layout plot_annotation
 #' @importFrom scales number_format
@@ -48,9 +68,6 @@ plot_centrality_stability <- function(caseDroppingBoot, nonParametricBoot,
 
   # 4) Asignar clase personalizada y definir print.silent para suprimir ese warning al imprimir
   class(combinado) <- c("silent_plot", class(combinado))
-  assign("print.silent_plot",
-         function(x, ...) suppressWarnings(NextMethod()),
-         envir = .GlobalEnv)
 
   # 5) Devolver el objeto combinado
   return(combinado)

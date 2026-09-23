@@ -9,7 +9,27 @@
 #' @param width_bc Width of centrality panels.
 #' @param show_plot Logical; display the combined plot.
 #'
+#' @return A ggplot object with the network (panel A), the centrality plot
+#'   (panel B) and, when supplied, the bridge centrality plot (panel C).
 #' @export
+#' @examples
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+#' g <- qgraph::qgraph(net$graph, DoNotPlot = TRUE)
+#' r2 <- mgm_error_metrics(items, type = rep("g", 8), level = rep(1, 8))$R2
+#' net_plot <- plot_net(net$graph, r2 = r2, groups_list = list(A = 1:4, B = 5:8))
+#' cent <- centrality_plots2(g, net)
+#' bridge <- centrality_cleveland_plot(g, net, groups = rep(c("A", "B"), each = 4))
+#' combine_groupBy(net_plot, cent$plot, bridge$plot, show_plot = FALSE)
 #' @importFrom ggplot2 ggplot theme theme_void margin
 #' @importFrom gridExtra arrangeGrob
 #' @importFrom grid unit gTree gList viewport rasterGrob

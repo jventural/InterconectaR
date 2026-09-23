@@ -309,8 +309,9 @@ ui <- page_fillable(
                     downloadButton("dl_codigo", "Descargar el .R",
                                    class = "btn btn-outline-secondary btn-sm")),
                 div(class = "leyenda",
-                    "La red se guarda con su semilla: ese bloque reproduce exactamente el
-                     número que aparece en la tesis.")),
+                    "La red se guarda con su semilla: el bloque 1 reproduce exactamente la red
+                     de referencia. Los bloques 2 y 3 son simulaciones estocásticas: al volver a
+                     correrlas, el N recomendado puede variar en algunas decenas de casos.")),
 
       nav_panel("Párrafo para la tesis",
                 uiOutput("parrafo"),
@@ -350,8 +351,15 @@ server <- function(input, output, session) {
     W <- red_bloques(ins$nod, input$dintra, input$dinter,
                      input$pintra, input$pinter, input$semilla)
     dimnames(W) <- list(etiquetas_nodos(ins$nom, ins$nod), etiquetas_nodos(ins$nom, ins$nod))
+    # la especificacion que genero ESTA red: el grafo, el script y el parrafo
+    # la leen de aqui aunque los controles cambien antes de volver a generar
+    attr(W, "spec") <- list(ins = ins, dintra = input$dintra, dinter = input$dinter,
+                            pintra = input$pintra, pinter = input$pinter,
+                            semilla = input$semilla)
     W
   })
+
+  spec_red <- reactive(attr(red(), "spec"))
 
   info_red <- reactive({
     W <- red(); k <- ncol(W)
@@ -363,7 +371,7 @@ server <- function(input, output, session) {
 
   # ---- el grafo ----
   output$grafo <- renderPlot({
-    W <- red(); ins <- instrumentos()
+    W <- red(); ins <- spec_red()$ins
     grupos <- split(seq_len(ncol(W)), rep(ins$nom, ins$nod))
     grupos <- grupos[unique(rep(ins$nom, ins$nod))]
     op <- par(mar = c(4, 2, 3, 2)); on.exit(par(op))
@@ -418,7 +426,10 @@ server <- function(input, output, session) {
       d <- do.call(rbind, partes)
       ag <- aggregate(cbind(sensitivity, specificity, correlation) ~ nCases,
                       data = d, FUN = function(x) mean(x, na.rm = TRUE))
-      list(crudo = d, agregado = ag)
+      list(crudo = d, agregado = ag,
+           spec = list(ncases = nc, nreps = input$nreps, metodo = input$metodo,
+                       ordinal = isTRUE(input$ordinal), nlevels = input$nlevels,
+                       cores = nucleos))
     })
   })
 
@@ -481,27 +492,50 @@ server <- function(input, output, session) {
        promedio: lo que importa es cuántas de ellas superan el umbral que vas a declarar.",
       format(ag$nCases[i1], big.mark = " "), d2(ag$sensitivity[i1]), d2(ag$correlation[i1]),
       format(ag$nCases[i2], big.mark = " "), d2(ag$sensitivity[i2]), d2(ag$correlation[i2]),
-      d2(ag$specificity[i1]), d2(ag$specificity[i2]), input$nreps))
+      d2(ag$specificity[i1]), d2(ag$specificity[i2]), boot()$spec$nreps))
   })
 
   # ---- powerly ----
   pw <- eventReactive(input$pow, {
     W <- red()
     validate(need(input$rup > input$rlow + 50, "El rango superior tiene que ser mayor."))
+    spec <- list(rlow = input$rlow, rup = input$rup, samples = input$samples,
+                 reps = input$reps, measure = input$measure, mvalue = input$mvalue,
+                 svalue = input$svalue,
+                 # la especificidad BAJA al crecer N: la curva es decreciente
+                 increasing = input$measure != "spe",
+                 cores = max(1, min(input$cores, parallel::detectCores())))
     withProgress(message = "Buscando el tamaño de muestra", value = .1, {
       r <- tryCatch(
         suppressWarnings(suppressMessages(
-          powerly::powerly(range_lower = input$rlow, range_upper = input$rup,
-                           samples = input$samples, replications = input$reps,
-                           measure = input$measure, measure_value = input$mvalue,
-                           statistic = "power", statistic_value = input$svalue,
+          powerly::powerly(range_lower = spec$rlow, range_upper = spec$rup,
+                           samples = spec$samples, replications = spec$reps,
+                           measure = spec$measure, measure_value = spec$mvalue,
+                           statistic = "power", statistic_value = spec$svalue,
                            model = "ggm", model_matrix = W,
-                           cores = max(1, min(input$cores, parallel::detectCores())),
+                           increasing = spec$increasing,
+                           cores = spec$cores,
                            verbose = FALSE))),
         error = function(e) list(error = conditionMessage(e)))
       incProgress(.85)
-      r
+      if (is.list(r) && is.null(r$error)) {
+        rec <- r$recommendation
+        r_ok <- list(res = r, spec = spec,
+                     converged = isTRUE(r$converged),
+                     tope = rec[["50%"]] >= spec$rup * .98)
+        # solo se reporta como N recomendado si convergio y no quedo en el tope
+        r_ok$valida <- r_ok$converged && !r_ok$tope
+        r_ok
+      } else r
     })
+  })
+
+  # N recomendado solo cuando el resultado es utilizable
+  rec_valida <- reactive({
+    if (input$pow == 0) return(NA)
+    p <- pw()
+    if (!is.null(p$error) || !isTRUE(p$valida)) return(NA)
+    p$res$recommendation[["50%"]]
   })
 
   output$salida_pow <- renderUI({
@@ -510,20 +544,24 @@ server <- function(input, output, session) {
                  "Pulsa «Calcular N» en el panel 3. powerly simula en varios tamaños dentro del
                   rango, ajusta una curva monótona al rendimiento y la remuestrea para dar la
                   recomendación con su intervalo."))
-    r <- pw()
-    if (!is.null(r$error)) return(div(class = "aviso", "powerly no pudo: ", r$error))
+    p <- pw()
+    if (!is.null(p$error)) return(div(class = "aviso", "powerly no pudo: ", p$error))
+    r <- p$res; s <- p$spec
     rec <- r$recommendation
-    tope <- rec[["50%"]] >= input$rup * .98
+    tope <- p$tope
     tagList(
       layout_columns(
         col_widths = c(5, 7),
         div(
           div(class = "tar clave", style = "border-top-width:5px",
-              div(class = "rot", "Recomendación"),
+              div(class = "rot", if (isTRUE(p$valida)) "Recomendación" else "Recomendación provisional"),
               div(class = "val", format(rec[["50%"]], big.mark = " ")),
               div(class = "pie", sprintf(
-                "participantes, para %s ≥ %s en el %s %% de las muestras",
-                input$measure, d2(input$mvalue), round(input$svalue * 100)))),
+                "participantes, para %s %s %s en el %s %% de las muestras",
+                s$measure, "≥", d2(s$mvalue), round(s$svalue * 100)))),
+          if (!p$converged) div(class = "aviso", style = "margin-top:12px",
+                                "powerly no convergió: el valor no es una recomendación.
+                                 Aumenta las réplicas o las muestras y vuelve a calcular."),
           div(class = "leyenda", style = "margin-top:14px",
               HTML(sprintf(
                 "Intervalo del 95 %%: <b>%s a %s</b> participantes.<br>
@@ -546,14 +584,15 @@ server <- function(input, output, session) {
   })
 
   output$curva_pow <- renderPlot({
-    r <- pw()
-    validate(need(is.null(r$error), "Sin resultado."))
+    p <- pw()
+    validate(need(is.null(p$error), "Sin resultado."))
+    r <- p$res
     d <- data.frame(N = r$range$partition, potencia = as.numeric(r$step_1$statistics))
     rec <- r$recommendation
     ggplot(d, aes(N, potencia)) +
       annotate("rect", xmin = rec[["2.5%"]], xmax = rec[["97.5%"]], ymin = -Inf, ymax = Inf,
                fill = COL$accent, alpha = .08) +
-      geom_hline(yintercept = input$svalue, linetype = "22", colour = COL$accent,
+      geom_hline(yintercept = p$spec$svalue, linetype = "22", colour = COL$accent,
                  linewidth = .7) +
       geom_vline(xintercept = rec[["50%"]], linetype = "22", colour = COL$accent,
                  linewidth = .7) +
@@ -577,14 +616,19 @@ server <- function(input, output, session) {
   # ---- tarjetas ----
   output$tarjetas <- renderUI({
     i <- info_red()
-    rec <- if (input$pow > 0 && is.null(pw()$error)) pw()$recommendation[["50%"]] else NA
+    rec <- rec_valida()
     div(class = "tarjetas",
         div(class = "tar clave", div(class = "rot", "N recomendado"),
             div(class = "val", if (is.na(rec)) "—" else format(rec, big.mark = " ")),
-            div(class = "pie", if (is.na(rec))
-              "pulsa «Calcular N» en el panel 3"
-              else sprintf("%s ≥ %s en el %s %% de las muestras",
-                           input$measure, d2(input$mvalue), round(input$svalue * 100)))),
+            div(class = "pie", if (is.na(rec)) {
+              if (input$pow > 0) "sin recomendación válida: revisa el panel de powerly"
+              else "pulsa «Calcular N» en el panel 3"
+            } else {
+              s <- pw()$spec
+              sprintf("%s %s %s en el %s %% de las muestras",
+                      s$measure, "≥", d2(s$mvalue),
+                      round(s$svalue * 100))
+            })),
         div(class = "tar", div(class = "rot", "Nodos"),
             div(class = "val", i$k),
             div(class = "pie", "una dimensión por nodo")),
@@ -598,8 +642,18 @@ server <- function(input, output, session) {
 
   # ---- código reproducible ----
   codigo_txt <- reactive({
-    ins <- instrumentos(); i <- info_red()
-    nc <- paste(ncases_v(), collapse = ", ")
+    sr <- spec_red(); ins <- sr$ins; i <- info_red()
+    # bloques 2 y 3: lo que se corrio; si aun no se corrio, lo que esta en pantalla
+    sb <- if (input$sim > 0) boot()$spec else
+      list(ncases = ncases_v(), nreps = input$nreps, metodo = input$metodo,
+           ordinal = isTRUE(input$ordinal), nlevels = input$nlevels,
+           cores = max(1, min(input$cores, parallel::detectCores())))
+    sp <- if (input$pow > 0 && is.null(pw()$error)) pw()$spec else
+      list(rlow = input$rlow, rup = input$rup, samples = input$samples,
+           reps = input$reps, measure = input$measure, mvalue = input$mvalue,
+           svalue = input$svalue, increasing = input$measure != "spe",
+           cores = max(1, min(input$cores, parallel::detectCores())))
+    nc <- paste(sb$ncases, collapse = ", ")
     paste0(
 "library(bootnet)\nlibrary(powerly)\nlibrary(qgraph)\n\n",
 "# ---- 1. la red de referencia -------------------------------------------\n",
@@ -624,32 +678,37 @@ server <- function(input, output, session) {
 "  while (min(eigen(diag(k) - W, only.values = TRUE)$values) < 1e-4) W <- W * .95\n",
 "  W\n}\n\n",
 sprintf("red <- red_bloques(c(%s), dens_intra = %s, dens_inter = %s,\n                   peso_intra = %s, peso_inter = %s, semilla = %d)\n",
-        paste(ins$nod, collapse = ", "), d2(input$dintra), d2(input$dinter),
-        d2(input$pintra), d2(input$pinter), input$semilla),
+        paste(ins$nod, collapse = ", "), d2(sr$dintra), d2(sr$dinter),
+        d2(sr$pintra), d2(sr$pinter), sr$semilla),
 sprintf("# %d nodos, %d aristas verdaderas de %d pares posibles\n\n", i$k, i$aristas, i$pares),
 "# ---- 2. que se recupera en cada tamano (Epskamp et al., 2018) ----------\n",
+"# la simulacion es estocastica: la semilla fija el resultado en una sola\n",
+"# sesion, pero con varios nucleos puede variar ligeramente entre equipos\n",
+sprintf("set.seed(%d)\n", sr$semilla),
 "sim <- netSimulator(\n",
 "  input         = red,\n",
 sprintf("  dataGenerator = ggmGenerator(ordinal = %s%s),\n",
-        if (isTRUE(input$ordinal)) "TRUE" else "FALSE",
-        if (isTRUE(input$ordinal)) sprintf(", nLevels = %d", input$nlevels) else ""),
+        if (isTRUE(sb$ordinal)) "TRUE" else "FALSE",
+        if (isTRUE(sb$ordinal)) sprintf(", nLevels = %d", sb$nlevels) else ""),
 sprintf("  nCases        = c(%s),\n", nc),
-sprintf("  nReps         = %d,\n", input$nreps),
-sprintf("  default       = \"%s\",\n", input$metodo),
-sprintf("  nCores        = %d\n)\n", max(1, min(input$cores, parallel::detectCores()))),
+sprintf("  nReps         = %d,\n", sb$nreps),
+sprintf("  default       = \"%s\",\n", sb$metodo),
+sprintf("  nCores        = %d\n)\n", sb$cores),
 "aggregate(cbind(sensitivity, specificity, correlation) ~ nCases,\n",
 "          data = as.data.frame(sim), FUN = mean)\n\n",
 "# ---- 3. el N recomendado (Constantin et al., 2026) ---------------------\n",
+sprintf("set.seed(%d)\n", sr$semilla),
 "rec <- powerly(\n",
-sprintf("  range_lower = %d, range_upper = %d,\n", input$rlow, input$rup),
-sprintf("  samples = %d, replications = %d,\n", input$samples, input$reps),
-sprintf("  measure         = \"%s\",\n", input$measure),
-sprintf("  measure_value   = %s,\n", d2(input$mvalue)),
+sprintf("  range_lower = %d, range_upper = %d,\n", sp$rlow, sp$rup),
+sprintf("  samples = %d, replications = %d,\n", sp$samples, sp$reps),
+sprintf("  measure         = \"%s\",\n", sp$measure),
+sprintf("  measure_value   = %s,\n", d2(sp$mvalue)),
 "  statistic       = \"power\",\n",
-sprintf("  statistic_value = %s,\n", d2(input$svalue)),
+sprintf("  statistic_value = %s,\n", d2(sp$svalue)),
 "  model           = \"ggm\",\n",
 "  model_matrix    = red,\n",
-sprintf("  cores           = %d\n)\n", max(1, min(input$cores, parallel::detectCores()))),
+sprintf("  increasing      = %s,\n", if (isTRUE(sp$increasing)) "TRUE" else "FALSE"),
+sprintf("  cores           = %d\n)\n", sp$cores),
 "summary(rec)\n")
   })
 
@@ -664,8 +723,11 @@ sprintf("  cores           = %d\n)\n", max(1, min(input$cores, parallel::detectC
                "criterio declarado", "N recomendado", "plan del coeficiente CS")
 
   tramos <- reactive({
-    ins <- instrumentos(); i <- info_red()
-    rec <- if (input$pow > 0 && is.null(pw()$error)) pw()$recommendation[["50%"]] else NA
+    ins <- spec_red()$ins; i <- info_red()
+    rec <- rec_valida()
+    sp <- if (!is.na(rec)) pw()$spec else
+      list(measure = input$measure, mvalue = input$mvalue, svalue = input$svalue,
+           increasing = input$measure != "spe")
     multi <- ins$nom[ins$nod > 1]; uni <- ins$nom[ins$nod == 1]
     c(
       sprintf("La red se especificó a nivel de dimensiones y no de ítems: %s%s.",
@@ -678,15 +740,16 @@ sprintf("  cores           = %d\n)\n", max(1, min(input$cores, parallel::detectC
       sprintf("Con ello el modelo estima %d correlaciones parciales entre %d nodos.",
               i$pares, i$k),
       "El tamaño muestral se determinó mediante simulación, procedimiento recomendado para modelos de red porque el número de parámetros impide el análisis de potencia convencional; siguiendo a Constantin et al. (2026), se empleó el paquete powerly en R 4.4.1 sobre una red de referencia derivada de la literatura previa con los mismos instrumentos.",
-      sprintf("Se especificó como requisito %s de al menos %s con la red verdadera en el %s %% de las muestras.",
-              switch(input$measure,
+      sprintf("Se especificó como requisito %s %s %s con la red verdadera en el %s %% de las muestras.",
+              switch(sp$measure,
                      rho = "una correlación", sen = "una sensibilidad",
                      spe = "una especificidad", mcc = "un coeficiente de correlación de Matthews"),
-              d2(input$mvalue), round(input$svalue * 100)),
+              "de al menos",
+              d2(sp$mvalue), round(sp$svalue * 100)),
       if (is.na(rec))
         "El procedimiento recomendó [N] participantes."
       else sprintf("El procedimiento recomendó %d participantes (IC 95 %%: %d a %d), valor que se contrastó con el enfoque de Epskamp et al. (2018) mediante bootnet::netSimulator.",
-                   rec, pw()$recommendation[["2.5%"]], pw()$recommendation[["97.5%"]]),
+                   rec, pw()$res$recommendation[["2.5%"]], pw()$res$recommendation[["97.5%"]]),
       "Una vez recogidos los datos, la estabilidad de los índices de centralidad se evaluará con el coeficiente CS por submuestreo de casos (1000 réplicas), adoptando CS ≥ .50 como criterio."
     )
   })

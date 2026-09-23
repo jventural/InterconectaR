@@ -7,8 +7,29 @@
 convert_EGA_to_df(ega_result)
 }
 \arguments{
-\item{ega_result}{A single EGA result object.}
+\item{ega_result}{A single EGA result object, as returned by
+\code{EGAnet::EGA()}.}
+}
+\value{
+A one-row data frame with the network model, correlation method,
+community detection algorithm, lambda, number of nodes and edges,
+density, descriptive statistics of the non-zero edge weights, number of
+communities and TEFI.
 }
 \description{
 Extracts network metrics from a single EGA result object.
+}
+\examples{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+ega <- EGAnet::EGA(items, plot.EGA = FALSE)
+convert_EGA_to_df(ega)
 }

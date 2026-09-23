@@ -15,6 +15,28 @@ mgm_error_metrics(data, type, level, k = 2)
 
 \item{k}{Order of interactions (default: 2).}
 }
+\value{
+A list with the node predictability of the model: \code{errorCon}, a
+data frame with the RMSE and R2 of the continuous variables; \code{errorCat},
+a data frame with the accuracy (CC) and normalized accuracy (nCC) of the
+categorical variables; and, when all variables are of the same kind, a
+named vector \code{R2} or \code{nCC} ready to be used as the \code{pie} argument of
+qgraph.
+}
 \description{
 Fits a Mixed Graphical Model and extracts prediction error metrics.
+}
+\examples{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+errors <- mgm_error_metrics(items, type = rep("g", 8), level = rep(1, 8))
+errors$errorCon
 }

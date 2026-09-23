@@ -1,8 +1,11 @@
 #' Plot a latent network diagram (SEM path diagram)
 #'
-#' @param model_object A model object (psychonetrics, lavaan, or similar).
+#' @param model_object A fitted model: a `lavaan` object or a `psychonetrics`
+#'   latent variable model (the latter needs the psychonetrics package).
 #' @param filename Output filename (with extension .png, .jpg, or .pdf).
-#' @param output_path Directory for output file (default: ".").
+#' @param output_path Directory where the file is written. It has no default,
+#'   so nothing is written unless you choose a location (use `tempdir()` for a
+#'   temporary one).
 #' @param width Plot width in inches.
 #' @param height Plot height in inches.
 #' @param resolution Plot resolution in DPI.
@@ -12,17 +15,35 @@
 #' @param plot_settings Optional list of semPaths plot settings.
 #' @param device_settings Optional list of device settings.
 #' @param edge_settings Optional list of edge display settings.
-#' @param save_message Logical; print save message (default: TRUE).
+#' @param save_message Logical; report the path of the saved file as a
+#'   message (default: TRUE).
 #' @param show_manifest Logical; show manifest variables (default: TRUE).
 #'
-#' @return Invisibly, NULL. Side effect: saves a plot to disk.
+#' @return Invisibly, the path of the saved file. Called for its side effect:
+#'   the diagram is written to `file.path(output_path, filename)`.
 #' @export
 #' @importFrom semPlot lisrelModel semPaths
 #' @importFrom RColorBrewer brewer.pal
-#' @importFrom viridis viridis
+#' @examples
+#' \donttest{
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' fit <- lavaan::cfa("F1 =~ A1 + A2 + A3 + A4
+#'                     F2 =~ B1 + B2 + B3 + B4", data = items)
+#' plot_latent_network_diagram(fit, filename = "diagram.png",
+#'                             output_path = tempdir(), resolution = 100)
+#' }
 plot_latent_network_diagram <- function(model_object,
                                         filename,
-                                        output_path = ".",
+                                        output_path = NULL,
                                         width = 9.5,
                                         height = 6.5,
                                         resolution = 1500,
@@ -38,19 +59,25 @@ plot_latent_network_diagram <- function(model_object,
   # Null-coalescing
   `%||%` <- function(x, y) if (is.null(x)) y else x
 
+  if (is.null(output_path)) {
+    stop("'output_path' is required: choose the folder where the diagram is ",
+         "saved (for example, output_path = tempdir()).", call. = FALSE)
+  }
+
   # Extraer matrices segun clase del modelo
-  if (inherits(model_object, "psychonetrics")) {
-    lambda_est <- getmatrix(model_object, "lambda")
-    psi_est    <- getmatrix(model_object, "sigma_zeta")
-    theta_est  <- getmatrix(model_object, "sigma_epsilon")
-  } else if (inherits(model_object, "lavaan")) {
-    lambda_est <- lavaan::inspect(model_object, "std")$lambda
-    psi_est    <- lavaan::inspect(model_object, "std")$psi
-    theta_est  <- lavaan::inspect(model_object, "std")$theta
+  if (inherits(model_object, "lavaan")) {
+    std <- lavaan::inspect(model_object, "std")
+    lambda_est <- std$lambda
+    psi_est    <- std$psi
+    theta_est  <- std$theta
   } else {
-    lambda_est <- getmatrix(model_object, "lambda")
-    psi_est    <- getmatrix(model_object, "sigma_zeta")
-    theta_est  <- getmatrix(model_object, "sigma_epsilon")
+    if (!requireNamespace("psychonetrics", quietly = TRUE)) {
+      stop("A non-lavaan model needs the 'psychonetrics' package. ",
+           "Install it with install.packages(\"psychonetrics\").", call. = FALSE)
+    }
+    lambda_est <- psychonetrics::getmatrix(model_object, "lambda")
+    psi_est    <- psychonetrics::getmatrix(model_object, "sigma_zeta")
+    theta_est  <- psychonetrics::getmatrix(model_object, "sigma_epsilon")
   }
 
   # Dimensiones
@@ -195,6 +222,10 @@ plot_latent_network_diagram <- function(model_object,
          "pdf" = pdf(output_file, width = device_settings$width, height = device_settings$height),
          stop("Formato no soportado. Usa .jpg, .png o .pdf")
   )
+  # Cerrar el dispositivo aunque semPaths falle
+  file_device <- grDevices::dev.cur()
+  on.exit(if (file_device %in% grDevices::dev.list()) grDevices::dev.off(file_device),
+          add = TRUE)
 
   # ---------- Parches clave ----------
   if (show_manifest) {
@@ -241,7 +272,8 @@ plot_latent_network_diagram <- function(model_object,
       edge.label.color = edge_settings$edge.label.color %||% "black"
     )
   }
-  dev.off()
+  grDevices::dev.off(file_device)
 
-  if (save_message) cat("SEM plot guardado en:", output_file, "\n")
+  if (save_message) message("SEM plot guardado en: ", output_file)
+  invisible(output_file)
 }

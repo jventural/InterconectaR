@@ -30,6 +30,24 @@
 #'
 #' @return A combined ggplot (patchwork) object.
 #' @export
+#' @examples
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#' items$sex <- rep(c("Female", "Male"), each = n / 2)
+#'
+#' nets <- estimate_networks_by_group(items, group_var = "sex",
+#'                                    columns = names(items)[1:8],
+#'                                    default = "EBICglasso")
+#' p <- plot_networks_by_group(nets, groups = list(A = 1:4, B = 5:8),
+#'                             res = 100, show_plot = FALSE)
+#' p
 #' @importFrom ggplot2 ggplot annotation_raster xlim ylim theme_void theme margin
 #' @importFrom patchwork wrap_plots
 #' @importFrom magick image_read

@@ -11,14 +11,15 @@ boot_and_evaluate(
   correlation_methods,
   sample_sizes = c(100, 250, 500, 1000),
   n_simulations = 100,
-  seed = 123,
-  n_cores = 4
+  seed = NULL,
+  n_cores = 2
 )
 }
 \arguments{
 \item{data}{Data frame with the data.}
 
-\item{true_network}{True network object for comparison.}
+\item{true_network}{Reference network used as the truth: an object returned
+by \code{EGAnet::EGA()} (its \code{network} element is compared with each estimate).}
 
 \item{algorithms}{Vector of algorithm names to evaluate.}
 
@@ -28,13 +29,36 @@ boot_and_evaluate(
 
 \item{n_simulations}{Number of simulations (default 100).}
 
-\item{seed}{Random seed (default 123).}
+\item{seed}{Optional random seed for reproducible results. \code{NULL} (default)
+leaves the random number generator untouched.}
 
-\item{n_cores}{Number of cores for parallel processing (default 4).}
+\item{n_cores}{Number of cores for parallel processing (default 2). With
+\code{n_cores = 1} the simulations run sequentially.}
 }
 \value{
 Data frame with performance metrics.
 }
 \description{
 Performs bootstrap evaluation of network analysis algorithms.
+}
+\examples{
+\donttest{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+true_net <- EGAnet::EGA(items, plot.EGA = FALSE)
+res <- boot_and_evaluate(items, true_network = true_net,
+                         algorithms = "walktrap",
+                         correlation_methods = "pearson",
+                         sample_sizes = c(100, 200),
+                         n_simulations = 2, seed = 1, n_cores = 1)
+head(res)
+}
 }

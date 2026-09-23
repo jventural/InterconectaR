@@ -39,12 +39,13 @@ across cores (\code{nCores} in bootnet, \code{cores} in powerly), which turns
 minutes into seconds.
 }
 \examples{
-\dontrun{
-# opens the app in the browser
-run_netpowerlab()
+# The application only runs in an interactive session
+if (interactive()) {
+  # opens the app in the browser
+  run_netpowerlab()
 
-# on a fixed port, without opening a browser window
-run_netpowerlab(launch.browser = FALSE, port = 7799)
+  # on a fixed port, without opening a browser window
+  run_netpowerlab(launch.browser = FALSE, port = 7799)
 }
 }
 \references{

@@ -11,9 +11,9 @@ refine_items_by_stability(
   model = "glasso",
   algorithm = "louvain",
   iter = 1000,
-  seed_start = 2025,
+  seed_start = NULL,
   type = "resampling",
-  ncores = 11,
+  ncores = 2,
   max_iter = 10,
   plot.itemStability = FALSE
 )
@@ -31,11 +31,13 @@ refine_items_by_stability(
 
 \item{iter}{Number of bootstrap iterations (default: 1000).}
 
-\item{seed_start}{Starting seed value (default: 2025).}
+\item{seed_start}{Optional starting seed. When supplied, refinement round
+\code{i} uses the seed \code{seed_start + i - 1}, which makes the results
+reproducible. \code{NULL} (default) leaves the seed to \code{EGAnet::bootEGA()}.}
 
 \item{type}{Bootstrap type (default: "resampling").}
 
-\item{ncores}{Number of cores for parallel processing (default: 11).}
+\item{ncores}{Number of cores for parallel processing (default: 2).}
 
 \item{max_iter}{Maximum number of refinement iterations (default: 10).}
 
@@ -46,4 +48,22 @@ A list containing the final bootstrap result, stability data, removed items, plo
 }
 \description{
 Iteratively refine items by bootstrap stability
+}
+\examples{
+\donttest{
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+)
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+refined <- refine_items_by_stability(items, corr = "pearson", iter = 20,
+                                     seed_start = 1, ncores = 1)
+refined$stability_df
+refined$removed_items
+}
 }

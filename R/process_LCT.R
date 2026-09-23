@@ -1,9 +1,18 @@
 #' Process LCT (Loadings Comparison Test) results
 #'
-#' @param ... One or more LCT result objects, passed as named arguments.
+#' @param ... One or more LCT result objects (from `EGAnet::LCT()`), each with
+#'   the elements `empirical`, `bootstrap` and `proportion`. The name of each
+#'   argument is used as its identifier.
 #'
 #' @return A tibble summarizing the LCT results.
 #' @export
+#' @examples
+#' # Two objects with the structure returned by EGAnet::LCT()
+#' scale_a <- list(empirical = "Factor", bootstrap = "Factor",
+#'                 proportion = c(Factor = 0.86, Network = 0.14))
+#' scale_b <- list(empirical = "Network", bootstrap = "Network",
+#'                 proportion = c(Factor = 0.22, Network = 0.78))
+#' process_LCT(scale_a, scale_b)
 #' @importFrom dplyr bind_rows
 #' @importFrom tibble tibble
 process_LCT <- function(...) {

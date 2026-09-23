@@ -7,7 +7,26 @@
 #' @param level Integer vector of variable levels.
 #' @param k Order of interactions (default: 2).
 #'
+#' @return A list with the node predictability of the model: `errorCon`, a
+#'   data frame with the RMSE and R2 of the continuous variables; `errorCat`,
+#'   a data frame with the accuracy (CC) and normalized accuracy (nCC) of the
+#'   categorical variables; and, when all variables are of the same kind, a
+#'   named vector `R2` or `nCC` ready to be used as the `pie` argument of
+#'   qgraph.
 #' @export
+#' @examples
+#' set.seed(123)
+#' n <- 300
+#' f1 <- rnorm(n)
+#' f2 <- 0.3 * f1 + rnorm(n)
+#' items <- data.frame(
+#'   sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+#'   sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
+#' )
+#' names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+#'
+#' errors <- mgm_error_metrics(items, type = rep("g", 8), level = rep(1, 8))
+#' errors$errorCon
 #' @importFrom mgm mgm
 #' @importFrom dplyr %>%
 mgm_error_metrics <- function(data, type, level, k = 2) {
@@ -61,8 +80,10 @@ mgm_error_metrics <- function(data, type, level, k = 2) {
   mgm_model <- mgm::mgm(
     data = data_matrix,
     type = type,
-    levels = level,
-    k = k
+    level = level,
+    k = k,
+    pbar = FALSE,
+    signInfo = FALSE
   )
 
   # Predecir modelo

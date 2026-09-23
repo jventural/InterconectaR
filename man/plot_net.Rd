@@ -11,8 +11,8 @@ plot_net(
   short_labels = NULL,
   full_labels = NULL,
   groups_list = NULL,
-  group_cols = c(`Burnout parental` = "#F1948A", `Estilos de comunicación` = "#3498DB",
-    `Satisfacción conyugal` = "#2ECC71"),
+  group_cols = NULL,
+  palette = "Darjeeling1",
   node_radius = 0.2,
   node_label_size = NULL,
   ring_offset = 0.045,
@@ -21,8 +21,8 @@ plot_net(
   edge_min = 0,
   lwd_range = c(0.4, 4.5),
   alpha_range = c(0.15, 1),
-  edge_color_pos = "black",
-  edge_color_neg = "#E74C3C",
+  edge_color_pos = NULL,
+  edge_color_neg = NULL,
   edge_curvature = 0.2,
   layout = "spring",
   layout_repulsion = 1,
@@ -40,7 +40,7 @@ plot_net(
   R2_position = "below",
   title = NULL,
   subtitle = NULL,
-  caption = "Anillo exterior: proporción de varianza explicada (R²)"
+  caption = "default"
 )
 }
 \arguments{
@@ -57,6 +57,9 @@ plot_net(
 \item{groups_list}{Named list mapping domain names to node indices.}
 
 \item{group_cols}{Named character vector of colors per domain.}
+
+\item{palette}{Wes Anderson palette used when \code{group_cols} or edge
+colors are not supplied.}
 
 \item{node_radius}{Numeric radius of node circles.}
 
@@ -112,7 +115,8 @@ plot_net(
 
 \item{subtitle}{Optional plot subtitle.}
 
-\item{caption}{Caption text (default explains R2 ring).}
+\item{caption}{Caption text. '"default"' explains the R2 ring;
+'NULL' removes the caption.}
 }
 \value{
 A ggplot object.
@@ -123,13 +127,23 @@ R2 progress rings, gradient-colored edges, and optional abbreviated
 labels with a legend mapping.
 }
 \examples{
-\dontrun{
-plot_net(
-  mat = network$graph,
-  r2  = R2_values,
-  labels = colnames(network$graph),
-  short_labels = c("AE","HZ","CT"),
-  full_labels  = c("Agotamiento Emocional","Hartazgo","Contraste")
+set.seed(123)
+n <- 300
+f1 <- rnorm(n)
+f2 <- 0.3 * f1 + rnorm(n)
+items <- data.frame(
+  sapply(1:4, function(i) 0.7 * f1 + rnorm(n, 0, 0.7)),
+  sapply(1:4, function(i) 0.7 * f2 + rnorm(n, 0, 0.7))
 )
-}
+names(items) <- c(paste0("A", 1:4), paste0("B", 1:4))
+
+net <- bootnet::estimateNetwork(items, default = "EBICglasso")
+r2 <- mgm_error_metrics(items, type = rep("g", 8), level = rep(1, 8))$R2
+plot_net(
+  mat = net$graph,
+  r2  = r2,
+  groups_list = list(Anxiety = 1:4, Depression = 5:8),
+  short_labels = names(items),
+  full_labels  = paste("Item", 1:8)
+)
 }
