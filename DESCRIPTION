@@ -1,17 +1,17 @@
 Package: InterconectaR
 Version: 1.0.1
-Date: 2026-09-23
-Title: Tools for Network Analysis and Psychometric Insights
+Date: 2026-10-05
+Title: Psychological Network Analysis and Psychometric Insights
 Encoding: UTF-8
 Authors@R: person("José", "Ventura-León",
                   email = "jventuraleon@gmail.com",
                   role = c("aut", "cre"),
                   comment = c(ORCID = "0000-0003-2996-4244"))
 Depends: R (>= 4.1.0)
-Description: Provides tools for psychological network analysis and
-    psychometric modeling in the social sciences. It estimates networks by
-    group, summarises centrality and bridge centrality indices, evaluates
-    the stability of edges and centrality from bootstrap results, refines
+Description: Estimates psychological networks by group for research in
+    the social sciences and complements them with psychometric modeling. It
+    summarises centrality and bridge centrality indices, evaluates the
+    stability of edges and centrality from bootstrap results, refines
     items by the stability of exploratory graph analysis (EGA), and plots
     networks with the variance explained of each node. It also estimates
     an a priori sample size for EGA through Monte Carlo simulation and

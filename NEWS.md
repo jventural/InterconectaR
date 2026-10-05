@@ -2,6 +2,9 @@
 
 First version submitted to CRAN.
 
+* `plot_networks_by_group()` restores `par()` with an immediate `on.exit()` call and always
+  closes its temporary device; the NetPowerLab app restores the user's `par()` after the plot.
+
 * The SemPowerLab application (`run_sempowerlab()`), added during development, moved to the
   PsyMetricTools package, which covers latent variable models. `semPower` is no longer
   suggested.

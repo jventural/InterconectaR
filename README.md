@@ -5,7 +5,7 @@
 <h1 align="center">InterconectaR</h1>
 
 <p align="center">
-  <strong>Tools for Network Analysis and Psychometric Insights</strong>
+  <strong>Psychological Network Analysis and Psychometric Insights</strong>
   <br />
   A comprehensive R package for constructing, analyzing, and visualizing psychological networks in social science research.
   <br />
@@ -230,7 +230,7 @@ plot_power_curve_ci(res)
 
 ## Citation
 
-Ventura-Leon, J. (2026). *InterconectaR: Tools for Network Analysis and Psychometric Insights* [R package]. GitHub. https://github.com/jventural/InterconectaR
+Ventura-Leon, J. (2026). *InterconectaR: Psychological Network Analysis and Psychometric Insights* [R package]. GitHub. https://github.com/jventural/InterconectaR
 
 ## Author
 

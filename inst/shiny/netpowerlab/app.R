@@ -374,7 +374,8 @@ server <- function(input, output, session) {
     W <- red(); ins <- spec_red()$ins
     grupos <- split(seq_len(ncol(W)), rep(ins$nom, ins$nod))
     grupos <- grupos[unique(rep(ins$nom, ins$nod))]
-    op <- par(mar = c(4, 2, 3, 2)); on.exit(par(op))
+    oldpar <- par(mar = c(4, 2, 3, 2))
+    on.exit(par(oldpar), add = TRUE)
     qgraph::qgraph(W, layout = "spring", groups = grupos,
                    color = COL_INS[seq_along(grupos)],
                    labels = colnames(W), label.cex = 1.05,
@@ -385,6 +386,7 @@ server <- function(input, output, session) {
                    title = sprintf("La red que se declara en model_matrix: %d nodos, %d pares posibles",
                                    ncol(W), choose(ncol(W), 2)),
                    title.cex = .9, mar = c(5, 5, 5, 5))
+    par(oldpar)
   }, res = 96)
 
   output$txt_red <- renderUI({

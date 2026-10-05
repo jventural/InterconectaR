@@ -94,53 +94,53 @@ plot_networks_by_group <- function(networks_by_group,
     # Crear un archivo temporal para este grafico especifico
     temp_file <- tempfile(fileext = ".png")
 
-    # Abrir dispositivo grafico temporal
-    png(filename = temp_file, width = width, height = height, units = units, res = res)
+    # Dibujar en un dispositivo temporal; par() se restaura antes de cerrarlo
+    draw_group <- function() {
+      png(filename = temp_file, width = width, height = height, units = units, res = res)
+      on.exit(dev.off(), add = TRUE)
+      oldpar <- par(mar = c(2, 2, title_spacing, 2))  # bottom, left, top, right - margen superior ajustable
+      on.exit(par(oldpar), add = TRUE, after = FALSE)
 
-    # Configurar margenes mas amplios
-    par(mar = c(2, 2, title_spacing, 2))  # bottom, left, top, right - margen superior ajustable
-
-    # Construir vector de colores por nodo si se especifica color por grupo
-    node_colors <- NULL
-    if (!is.null(color)) {
-      # color debe ser un vector con un color por cada grupo en 'groups'
-      # Crear vector de colores para cada nodo segun su grupo
-      n_nodes <- ncol(networks_by_group[[i]]$graph)
-      node_colors <- rep(NA, n_nodes)
-      for (g in seq_along(groups)) {
-        node_colors[groups[[g]]] <- color[g]
+      # Construir vector de colores por nodo si se especifica color por grupo
+      node_colors <- NULL
+      if (!is.null(color)) {
+        # color debe ser un vector con un color por cada grupo en 'groups'
+        # Crear vector de colores para cada nodo segun su grupo
+        n_nodes <- ncol(networks_by_group[[i]]$graph)
+        node_colors <- rep(NA, n_nodes)
+        for (g in seq_along(groups)) {
+          node_colors[groups[[g]]] <- color[g]
+        }
       }
+
+      # Crear el grafico qgraph
+      qgraph(networks_by_group[[i]]$graph,
+             layout = L,
+             palette = palette,
+             groups = groups,
+             color = node_colors,
+             labels = if (!is.null(labels)) labels else colnames(networks_by_group[[i]]$graph),
+             pie = pie_values,
+             title = paste0("\n", "Group: ", group_name),
+             title.cex = title.cex,
+             edge.labels = edge.labels,
+             edge.label.cex = edge.label.cex,
+             edge.label.position = 0.5,
+             border.width = border.width,
+             label.cex = label.cex,
+             legend.cex = legend.cex,
+             legend.mode = "groups",
+             GLratio = GLratio,
+             vsize = vsize,
+             esize = esize,
+             node.width = node.width,
+             curveAll = curveAll,
+             minimum = minimum,
+             mar = c(5, 3, 5, 3),
+             rescale = TRUE,
+             layoutScale = layoutScale)
     }
-
-    # Crear el grafico qgraph
-    qgraph(networks_by_group[[i]]$graph,
-           layout = L,
-           palette = palette,
-           groups = groups,
-           color = node_colors,
-           labels = if (!is.null(labels)) labels else colnames(networks_by_group[[i]]$graph),
-           pie = pie_values,
-           title = paste0("\n", "Group: ", group_name),
-           title.cex = title.cex,
-           edge.labels = edge.labels,
-           edge.label.cex = edge.label.cex,
-           edge.label.position = 0.5,
-           border.width = border.width,
-           label.cex = label.cex,
-           legend.cex = legend.cex,
-           legend.mode = "groups",
-           GLratio = GLratio,
-           vsize = vsize,
-           esize = esize,
-           node.width = node.width,
-           curveAll = curveAll,
-           minimum = minimum,
-           mar = c(5, 3, 5, 3),
-           rescale = TRUE,
-           layoutScale = layoutScale)
-
-    # Cerrar el dispositivo
-    dev.off()
+    draw_group()
 
     # Leer la imagen con magick
     img <- image_read(temp_file)

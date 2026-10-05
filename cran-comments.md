@@ -1,3 +1,15 @@
+## Resubmission
+
+This is a resubmission. In response to the review of 2026-10-02 (Leonore Hochhauser):
+
+* Title and Description no longer start with "Tools for" or similar. The Title is now
+  "Psychological Network Analysis and Psychometric Insights" and the Description starts
+  with "Estimates psychological networks by group".
+* R/plot_networks_by_group.R: the call to par() now stores the old settings and resets them
+  with an immediate on.exit() call, inside a helper that also closes the temporary device.
+* inst/shiny/netpowerlab/app.R: the user's par() is stored and reset explicitly with
+  par(oldpar) after the plot (and through on.exit() if the plot fails).
+
 ## Submission summary
 
 New submission of InterconectaR (version 1.0.1). The package provides tools for
